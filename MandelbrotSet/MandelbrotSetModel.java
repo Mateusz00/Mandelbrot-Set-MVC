@@ -19,21 +19,21 @@ class MandelbrotSetModel extends Observable
     private double xStep;
 
     public MandelbrotSetModel() {
-        iterationsData = new ArrayList<>(Collections.nCopies(Application.APP_HEIGHT * Application.APP_WIDTH, (long) 0));
-        center = new Point2D.Double(-0.5, 0);
-        zoom   = new double[]{1.5, 1};
+        iterationsData = new ArrayList<>(Collections.nCopies(Application.HEIGHT * Application.WIDTH, (long) 0));
+        center = new Point2D.Double(-0.5, 0.1);
+        zoom   = new double[]{1.7, 1.3};
         xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
         yRange = new double[]{center.getY() - zoom[1], center.getY() + zoom[1]};
-        xStep  = (xRange[1] - xRange[0]) / Application.APP_WIDTH;
-        yStep  = (yRange[1] - yRange[0]) / Application.APP_HEIGHT;
+        xStep  = (xRange[1] - xRange[0]) / Application.WIDTH;
+        yStep  = (yRange[1] - yRange[0]) / Application.HEIGHT;
     }
 
     /**
      * Calculates number of iterations for every pixel of the main window
      */
     public void initialize() {
-        for(int y=0; y < Application.APP_HEIGHT; ++y)
-            generateLine(0, Application.APP_WIDTH, y);
+        for(int y=0; y < Application.HEIGHT; ++y)
+            generateLine(0, Application.WIDTH, y);
 
         setChanged();
         notifyObservers();
@@ -49,13 +49,13 @@ class MandelbrotSetModel extends Observable
         double Pr = xRange[0];
 
         for(int i = firstPixel; i < lastPixel; ++i, Pr += xStep)
-            iterationsData.set(line * Application.APP_HEIGHT + i, getIterations(Pr, Pi));
+            iterationsData.set(line * Application.WIDTH + i, getIterations(Pr, Pi));
     }
 
     /**
      * @param Pr real part of point
      * @param Pi imaginary part of point
-     * @return Number of iterations until going past escapeRadius
+     * @return Number of iterations for given point until going past escapeRadius
      */
     private long getIterations(double Pr, double Pi) {
         double Zr  = 0;
@@ -80,5 +80,9 @@ class MandelbrotSetModel extends Observable
      */
     public List<Long> getIterationsData() {
         return Collections.unmodifiableList(iterationsData);
+    }
+
+    public long getMaxIterations() {
+        return maxIterations;
     }
 }
