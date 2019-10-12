@@ -19,8 +19,9 @@ public class Application
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         MandelbrotSetModel model = new MandelbrotSetModel();
-        MandelbrotSetView view = new MandelbrotSetView(model);
-        controller = new MandelbrotSetController(model, view);
+        controller = new MandelbrotSetController(model, mainWindow);
+        MandelbrotSetView view = new MandelbrotSetView(model, controller);
+        controller.setView(view);
 
         mainWindow.add(view);
 
@@ -40,7 +41,7 @@ public class Application
 
         @Override
         public void run() {
-            model.initialize();
+            model.generate();
         }
     }
 }

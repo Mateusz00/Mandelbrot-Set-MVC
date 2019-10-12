@@ -19,19 +19,17 @@ class MandelbrotSetModel extends Observable
     private double xStep;
 
     public MandelbrotSetModel() {
-        iterationsData = new ArrayList<>(Collections.nCopies(Application.HEIGHT * Application.WIDTH, (long) 0));
+        iterationsData = new ArrayList<>(Collections.nCopies(Application.HEIGHT * Application.WIDTH, 0L));
         center = new Point2D.Double(-0.5, 0.1);
         zoom   = new double[]{1.7, 1.3};
-        xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
-        yRange = new double[]{center.getY() - zoom[1], center.getY() + zoom[1]};
-        xStep  = (xRange[1] - xRange[0]) / Application.WIDTH;
-        yStep  = (yRange[1] - yRange[0]) / Application.HEIGHT;
+        calculateRange();
+        calculateStep();
     }
 
     /**
      * Calculates number of iterations for every pixel of the main window
      */
-    public void initialize() {
+    public void generate() {
         for(int y=0; y < Application.HEIGHT; ++y)
             generateLine(0, Application.WIDTH, y);
 
@@ -84,5 +82,33 @@ class MandelbrotSetModel extends Observable
 
     public long getMaxIterations() {
         return maxIterations;
+    }
+
+    public void moveCenter(Point2D direction, float percent) {
+        double xChange = getXRange() * percent;
+        double yChange = getYRange() * percent;
+        Point2D changeVector = new Point2D.Double(xChange * direction.getX(), yChange * direction.getY());
+
+        center.setLocation(center.getX() + changeVector.getX(), center.getY() + changeVector.getY());
+        calculateRange();
+        generate();
+    }
+
+    private double getXRange() {
+        return (xRange[1] - xRange[0]);
+    }
+
+    private double getYRange() {
+        return (yRange[1] - yRange[0]);
+    }
+
+    private void calculateRange() {
+        xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
+        yRange = new double[]{center.getY() - zoom[1], center.getY() + zoom[1]};
+    }
+
+    private void calculateStep() {
+        xStep  = getXRange() / Application.WIDTH;
+        yStep  = getYRange() / Application.HEIGHT;
     }
 }
