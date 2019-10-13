@@ -44,7 +44,7 @@ class MandelbrotSetModel extends Observable
      */
     private void generateLine(int firstPixel, int lastPixel, int line) {
         double Pi = yRange[0] + yStep*line;
-        double Pr = xRange[0];
+        double Pr = xRange[0] + xStep*firstPixel;
 
         for(int i = firstPixel; i < lastPixel; ++i, Pr += xStep)
             iterationsData.set(line * Application.WIDTH + i, getIterations(Pr, Pi));
@@ -84,14 +84,53 @@ class MandelbrotSetModel extends Observable
         return maxIterations;
     }
 
-    public void moveCenter(Point2D direction, float percent) {
-        double xChange = getXRange() * percent;
-        double yChange = getYRange() * percent;
-        Point2D changeVector = new Point2D.Double(xChange * direction.getX(), yChange * direction.getY());
+    public void moveCenter(Point2D dir, int pixels) {
+        Utility.normalizeDirectionVector(dir);
+        double xChange = xStep * pixels;
+        double yChange = yStep * pixels;
+        Point2D changeVector = new Point2D.Double(xChange * dir.getX(), yChange * dir.getY());
 
         center.setLocation(center.getX() + changeVector.getX(), center.getY() + changeVector.getY());
         calculateRange();
-        generate();
+        moveMandelbrotSet(changeVector);
+    }
+
+    private void moveMandelbrotSet(Point2D changeVector) {
+        int xShift = (int) (changeVector.getX() / xStep);
+        int yShift = (int) (changeVector.getY() / yStep);
+
+        // Generate new set if nothing can be shifted
+        if(Math.abs(xShift) >= Application.WIDTH || Math.abs(yShift) >= Application.HEIGHT) {
+            generate();
+            return;
+        }
+
+        // Shift left/right (If center moved to the right then shift data to the left)
+        if(xShift != 0) {
+            int shiftRangeBeg = (xShift > 0) ? xShift : (Application.WIDTH - 1 + xShift);
+            int direction = xShift / Math.abs(xShift); // Increment when moving center to the right, decrement otherwise
+            int shiftRangeEnd = (xShift > 0) ? Application.WIDTH : -1;
+
+            // Shifts array data by xShift and fills emptied cells
+            for(int y = 0; y < Application.HEIGHT; ++y) {
+                int lineOffset = y * Application.WIDTH;
+
+                for(int i = shiftRangeBeg; i != shiftRangeEnd; i += direction)
+                    iterationsData.set(i - xShift + lineOffset, iterationsData.get(i + lineOffset));
+
+                if(xShift > 0)
+                    generateLine(Application.WIDTH - 1 - xShift, Application.WIDTH, y);
+                else
+                    generateLine(0, -xShift, y);
+            }
+        }
+        // Shift up/down (If center moved down then shift data upwards)
+        if(yShift != 0) {
+            // TODO
+        }
+
+        setChanged();
+        notifyObservers();
     }
 
     private double getXRange() {
