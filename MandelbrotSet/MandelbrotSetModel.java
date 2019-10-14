@@ -126,13 +126,27 @@ class MandelbrotSetModel extends Observable
         }
         // Shift up/down (If center moved down then shift data upwards)
         if(yShift != 0) {
-            // TODO
+            int shiftRangeBeg = (yShift > 0) ? yShift : (Application.HEIGHT - 1 + yShift);
+            int direction = yShift / Math.abs(yShift); // Increment when moving center down, decrement otherwise
+            int shiftRangeEnd = (yShift > 0) ? Application.HEIGHT : -1;
+
+            // Shifts array data by yShift and fills emptied cells
+            for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
+                int lineOffset = y * Application.WIDTH;
+
+                for(int i = 0; i < Application.WIDTH; ++i)
+                    iterationsData.set(i + lineOffset - yShift * Application.WIDTH, iterationsData.get(i + lineOffset));
+            }
+
+            // Fill cells that hold invalid data
+            for(int y = Application.HEIGHT - 1 - shiftRangeBeg; y != shiftRangeEnd; y += direction)
+                generateLine(0, Application.WIDTH, y);
         }
 
         setChanged();
         notifyObservers();
     }
-
+    
     private double getXRange() {
         return (xRange[1] - xRange[0]);
     }
