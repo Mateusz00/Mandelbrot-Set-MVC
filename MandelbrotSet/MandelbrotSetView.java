@@ -36,14 +36,16 @@ public class MandelbrotSetView extends JPanel
      * Assigns RGB values to each pixel based on number of iterations for point representing that pixel
      */
     private void updateView() {
-        long maxIterations = model.getMaxIterations();
+        SwingUtilities.invokeLater(() -> {
+            long maxIterations = model.getMaxIterations();
 
-        for(int i = 0; i < iterationsData.size(); ++i) {
-            float[] HSB = calculateHSB(iterationsData.get(i), maxIterations);
-            mandelbrotImg.setRGB(i % Application.WIDTH, i / Application.WIDTH, Color.HSBtoRGB(HSB[0], HSB[1], HSB[2]));
-        }
+            for(int i = 0; i < iterationsData.size(); ++i) {
+                float[] HSB = calculateHSB(iterationsData.get(i), maxIterations);
+                mandelbrotImg.setRGB(i % Application.WIDTH, i / Application.WIDTH, Color.HSBtoRGB(HSB[0], HSB[1], HSB[2]));
+            }
 
-        repaint();
+            repaint();
+        });
     }
 
     /**
