@@ -5,10 +5,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Observable;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 
 class MandelbrotSetModel extends Observable
 {
     private ArrayList<Long> iterationsData;
+    private final Object dataLock = new Object();
     private long maxIterations = 200;
     private long escapeRadius = 4;
     private double[] zoom;
@@ -17,6 +20,8 @@ class MandelbrotSetModel extends Observable
     private Point2D.Double center;
     private double yStep;
     private double xStep;
+    private static int THRESHOLD_Y = 50;
+    private ForkJoinPool pool = ForkJoinPool.commonPool();
 
     public MandelbrotSetModel() {
         iterationsData = new ArrayList<>(Collections.nCopies(Application.HEIGHT * Application.WIDTH, 0L));
@@ -30,11 +35,22 @@ class MandelbrotSetModel extends Observable
      * Calculates number of iterations for every pixel of the main window
      */
     public void generate() {
-        for(int y=0; y < Application.HEIGHT; ++y)
-            generateLine(0, Application.WIDTH, y);
+        generateConcurrently(0, Application.WIDTH, 0, Application.HEIGHT);
 
         setChanged();
         notifyObservers();
+    }
+
+    private void generateConcurrently(int firstPixel, int lastPixel, int firstLine, int lastLine) {
+        synchronized (dataLock) { synchronized (iterationsData) {
+            ForkGenerate fg = new ForkGenerate(firstPixel, lastPixel, firstLine, lastLine);
+            pool.invoke(fg);
+        } }
+    }
+
+    private void generateBlock(int firstPixel, int lastPixel, int firstLine, int lastLine) {
+        for(int y = firstLine; y < lastLine; ++y)
+            generateLine(firstPixel, lastPixel, y);
     }
 
     /**
@@ -112,18 +128,21 @@ class MandelbrotSetModel extends Observable
             int shiftRangeEnd = (xShift > 0) ? Application.WIDTH : -1;
 
             // Shifts array data by xShift and fills emptied cells
-            for(int y = 0; y < Application.HEIGHT; ++y) {
-                int lineOffset = y * Application.WIDTH;
+            synchronized(dataLock) { synchronized(iterationsData) {
+                for(int y = 0; y < Application.HEIGHT; ++y) {
+                    int lineOffset = y * Application.WIDTH;
 
-                for(int i = shiftRangeBeg; i != shiftRangeEnd; i += direction)
-                    iterationsData.set(i - xShift + lineOffset, iterationsData.get(i + lineOffset));
+                    for(int i = shiftRangeBeg; i != shiftRangeEnd; i += direction)
+                        iterationsData.set(i - xShift + lineOffset, iterationsData.get(i + lineOffset));
+                }
+            } }
 
-                if(xShift > 0)
-                    generateLine(Application.WIDTH - 1 - xShift, Application.WIDTH, y);
-                else
-                    generateLine(0, -xShift, y);
-            }
+            if(xShift > 0)
+                generateConcurrently(Application.WIDTH - 1 - xShift, Application.WIDTH, 0, Application.HEIGHT);
+            else
+                generateConcurrently(0, -xShift, 0, Application.HEIGHT);
         }
+
         // Shift up/down (If center moved down then shift data upwards)
         if(yShift != 0) {
             int shiftRangeBeg = (yShift > 0) ? yShift : (Application.HEIGHT - 1 + yShift);
@@ -131,22 +150,26 @@ class MandelbrotSetModel extends Observable
             int shiftRangeEnd = (yShift > 0) ? Application.HEIGHT : -1;
 
             // Shifts array data by yShift and fills emptied cells
-            for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
-                int lineOffset = y * Application.WIDTH;
+            synchronized(dataLock) { synchronized(iterationsData) {
+                for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
+                    int lineOffset = y * Application.WIDTH;
 
-                for(int i = 0; i < Application.WIDTH; ++i)
-                    iterationsData.set(i + lineOffset - yShift * Application.WIDTH, iterationsData.get(i + lineOffset));
-            }
+                    for(int i = 0; i < Application.WIDTH; ++i)
+                        iterationsData.set(i + lineOffset - yShift * Application.WIDTH, iterationsData.get(i + lineOffset));
+                }
+            } }
 
             // Fill cells that hold invalid data
-            for(int y = Application.HEIGHT - 1 - shiftRangeBeg; y != shiftRangeEnd; y += direction)
-                generateLine(0, Application.WIDTH, y);
+            if(yShift > 0)
+                generateConcurrently(0, Application.WIDTH, (Application.HEIGHT - yShift), Application.HEIGHT);
+            else
+                generateConcurrently(0, Application.WIDTH, 0, -yShift);
         }
 
         setChanged();
         notifyObservers();
     }
-    
+
     private double getXRange() {
         return (xRange[1] - xRange[0]);
     }
@@ -163,5 +186,35 @@ class MandelbrotSetModel extends Observable
     private void calculateStep() {
         xStep  = getXRange() / Application.WIDTH;
         yStep  = getYRange() / Application.HEIGHT;
+    }
+
+    private class ForkGenerate extends RecursiveAction
+    {
+        private int mStartX;
+        private int mEndX;
+        private int mStartY;
+        private int mEndY;
+
+        public ForkGenerate(int startX, int endX, int startY, int endY) {
+            mStartX = startX;
+            mEndX = endX;
+            mStartY = startY;
+            mEndY = endY;
+        }
+
+        @Override
+        protected void compute() {
+            int length = mEndY - mStartY;
+
+            if(length < THRESHOLD_Y) {
+                generateBlock(mStartX, mEndX, mStartY, mEndY);
+            }
+            else {
+                int mid = length / 2;
+
+                invokeAll(new ForkGenerate(mStartX, mEndX, mStartY, mStartY + mid),
+                          new ForkGenerate(mStartX, mEndX, mStartY + mid, mEndY));
+            }
+        }
     }
 }

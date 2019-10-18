@@ -20,7 +20,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
         view = view1;
     }
 
-    public void removeView(MandelbrotSetView view1){
+    public void removeView(MandelbrotSetView view1) {
         if(view == view1)
             view = null;
     }
