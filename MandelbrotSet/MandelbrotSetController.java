@@ -1,28 +1,34 @@
 package MandelbrotSet;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.geom.Point2D;
 
 public class MandelbrotSetController implements MandelbrotSetControls
 {
     private static final int movePixelsX = (int) (Application.WIDTH * 0.02);
     private static final int movePixelsY = (int) (Application.HEIGHT * 0.02);
+    private static final float zoomPercent = 0.07f;
     private MandelbrotSetModel model;
     private MandelbrotSetView view;
-    private JFrame mainFrame;
+    private Container mContainer;
 
-    public MandelbrotSetController(MandelbrotSetModel model1, JFrame mainFrame1) {
+    public MandelbrotSetController(MandelbrotSetModel model1, Container container) {
         model = model1;
-        mainFrame = mainFrame1;
+        mContainer = container;
     }
 
     public void setView(MandelbrotSetView view1){
+        mContainer.add(view1);
         view = view1;
     }
 
     public void removeView(MandelbrotSetView view1) {
-        if(view == view1)
+        if(view == view1) {
+            mContainer.remove(view);
             view = null;
+        }
+
     }
 
     @Override
@@ -43,5 +49,15 @@ public class MandelbrotSetController implements MandelbrotSetControls
     @Override
     public void moveCenterDown() {
         model.moveCenter(new Point2D.Double(0, 1), movePixelsY);
+    }
+
+    @Override
+    public void zoomIn() {
+        model.zoom(zoomPercent);
+    }
+
+    @Override
+    public void zoomOut() {
+        model.zoom(-zoomPercent);
     }
 }

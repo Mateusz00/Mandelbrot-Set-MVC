@@ -6,4 +6,6 @@ public interface MandelbrotSetControls
     void moveCenterToRight();
     void moveCenterUp();
     void moveCenterDown();
+    void zoomIn();
+    void zoomOut();
 }

@@ -19,11 +19,9 @@ public class Application
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         MandelbrotSetModel model = new MandelbrotSetModel();
-        controller = new MandelbrotSetController(model, mainWindow);
+        controller = new MandelbrotSetController(model, mainWindow.getContentPane());
         MandelbrotSetView view = new MandelbrotSetView(model, controller);
         controller.setView(view);
-
-        mainWindow.add(view);
 
         mainWindow.setVisible(true);
 

@@ -12,9 +12,13 @@ class MandelbrotSetModel extends Observable
 {
     private ArrayList<Long> iterationsData;
     private final Object dataLock = new Object();
-    private long maxIterations = 200;
+    private static final long DEFAULT_MAX_ITERATIONS = 250;
+    private static final double DEFAULT_ZOOM_X = 1.7;
+    private static final double DEFAULT_ZOOM_Y = 1.3;
+    private long maxIterations = DEFAULT_MAX_ITERATIONS;
     private long escapeRadius = 4;
     private double[] zoom;
+    private double zoomPercent = 0;
     private double[] xRange;
     private double[] yRange;
     private Point2D.Double center;
@@ -26,7 +30,7 @@ class MandelbrotSetModel extends Observable
     public MandelbrotSetModel() {
         iterationsData = new ArrayList<>(Collections.nCopies(Application.HEIGHT * Application.WIDTH, 0L));
         center = new Point2D.Double(-0.5, 0.1);
-        zoom   = new double[]{1.7, 1.3};
+        zoom   = new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y};
         calculateRange();
         calculateStep();
     }
@@ -34,11 +38,8 @@ class MandelbrotSetModel extends Observable
     /**
      * Calculates number of iterations for every pixel of the main window
      */
-    public void generate() {
+    void generate() {
         generateConcurrently(0, Application.WIDTH, 0, Application.HEIGHT);
-
-        setChanged();
-        notifyObservers();
     }
 
     private void generateConcurrently(int firstPixel, int lastPixel, int firstLine, int lastLine) {
@@ -46,6 +47,9 @@ class MandelbrotSetModel extends Observable
             ForkGenerate fg = new ForkGenerate(firstPixel, lastPixel, firstLine, lastLine);
             pool.invoke(fg);
         } }
+
+        setChanged();
+        notifyObservers();
     }
 
     private void generateBlock(int firstPixel, int lastPixel, int firstLine, int lastLine) {
@@ -92,15 +96,15 @@ class MandelbrotSetModel extends Observable
     /**
      * @return Array containing calculated iterations for each pixel
      */
-    public List<Long> getIterationsData() {
+    List<Long> getIterationsData() {
         return Collections.unmodifiableList(iterationsData);
     }
 
-    public long getMaxIterations() {
+    long getMaxIterations() {
         return maxIterations;
     }
 
-    public void moveCenter(Point2D dir, int pixels) {
+    void moveCenter(Point2D dir, int pixels) {
         Utility.normalizeDirectionVector(dir);
         double xChange = xStep * pixels;
         double yChange = yStep * pixels;
@@ -165,9 +169,6 @@ class MandelbrotSetModel extends Observable
             else
                 generateConcurrently(0, Application.WIDTH, 0, -yShift);
         }
-
-        setChanged();
-        notifyObservers();
     }
 
     private double getXRange() {
@@ -184,8 +185,20 @@ class MandelbrotSetModel extends Observable
     }
 
     private void calculateStep() {
-        xStep  = getXRange() / Application.WIDTH;
-        yStep  = getYRange() / Application.HEIGHT;
+        xStep = getXRange() / Application.WIDTH;
+        yStep = getYRange() / Application.HEIGHT;
+    }
+
+    void zoom(float zoomChange) {
+        zoom[0] *= (1 - zoomChange);
+        zoom[1] *= (1 - zoomChange);
+
+        zoomPercent += zoomChange;
+        maxIterations = (zoomPercent > 0) ? (long)(DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS;
+
+        calculateRange();
+        calculateStep();
+        generate();
     }
 
     private class ForkGenerate extends RecursiveAction

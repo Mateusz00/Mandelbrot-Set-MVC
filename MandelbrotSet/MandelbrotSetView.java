@@ -71,6 +71,8 @@ public class MandelbrotSetView extends JPanel
         getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "moveRight");
         getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "moveUp");
         getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "moveDown");
+        getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, 0), "zoomIn");
+        getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_X, 0), "zoomOut");
 
         getActionMap().put("moveLeft", new AbstractAction() {
             @Override
@@ -94,6 +96,18 @@ public class MandelbrotSetView extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 controller.moveCenterDown();
+            }
+        });
+        getActionMap().put("zoomIn", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controller.zoomIn();
+            }
+        });
+        getActionMap().put("zoomOut", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controller.zoomOut();
             }
         });
     }
