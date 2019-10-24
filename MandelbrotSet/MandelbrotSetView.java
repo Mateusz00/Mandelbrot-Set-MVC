@@ -19,7 +19,6 @@ public class MandelbrotSetView extends JPanel
         model = pModel;
         controller = pController;
         model.addObserver(new ModelObserver());
-        iterationsData = model.getIterationsData();
         mandelbrotImg = new BufferedImage(Application.WIDTH, Application.HEIGHT, BufferedImage.TYPE_INT_RGB);
         addBindings();
     }
@@ -36,9 +35,10 @@ public class MandelbrotSetView extends JPanel
      * Assigns RGB values to each pixel based on number of iterations for point representing that pixel
      */
     private void updateView() {
-        SwingUtilities.invokeLater(() -> {
-            long maxIterations = model.getMaxIterations();
+        iterationsData = model.getIterationsData();
+        long maxIterations = model.getMaxIterations();
 
+        SwingUtilities.invokeLater(() -> {
             for(int i = 0; i < iterationsData.size(); ++i) {
                 float[] HSB = calculateHSB(iterationsData.get(i), maxIterations);
                 mandelbrotImg.setRGB(i % Application.WIDTH, i / Application.WIDTH, Color.HSBtoRGB(HSB[0], HSB[1], HSB[2]));

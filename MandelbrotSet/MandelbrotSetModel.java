@@ -7,17 +7,20 @@ import java.util.List;
 import java.util.Observable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicLong;
 
 class MandelbrotSetModel extends Observable
 {
     private ArrayList<Long> iterationsData;
     private final Object dataLock = new Object();
+    private final Object rangeLock = new Object();
+    private final Object stepLock = new Object();
     private static final long DEFAULT_MAX_ITERATIONS = 250;
     private static final double DEFAULT_ZOOM_X = 1.7;
     private static final double DEFAULT_ZOOM_Y = 1.3;
-    private long maxIterations = DEFAULT_MAX_ITERATIONS;
+    private final AtomicLong maxIterations = new AtomicLong(DEFAULT_MAX_ITERATIONS);
     private long escapeRadius = 4;
-    private double[] zoom;
+    private final double[] zoom;
     private double zoomPercent = 0;
     private double[] xRange;
     private double[] yRange;
@@ -43,13 +46,13 @@ class MandelbrotSetModel extends Observable
     }
 
     private void generateConcurrently(int firstPixel, int lastPixel, int firstLine, int lastLine) {
-        synchronized (dataLock) { synchronized (iterationsData) {
+        synchronized(dataLock) { synchronized(iterationsData) {
             ForkGenerate fg = new ForkGenerate(firstPixel, lastPixel, firstLine, lastLine);
             pool.invoke(fg);
-        } }
 
-        setChanged();
-        notifyObservers();
+            setChanged();
+            notifyObservers();
+        } }
     }
 
     private void generateBlock(int firstPixel, int lastPixel, int firstLine, int lastLine) {
@@ -83,7 +86,7 @@ class MandelbrotSetModel extends Observable
         long   n   = 0;
 
         // Mandelbrot set equation
-        for( ; n < maxIterations && Zr2+Zi2 <= escapeRadius; ++n) {
+        for( ; n < maxIterations.get() && Zr2+Zi2 <= escapeRadius; ++n) {
             Zi = 2 * Zr * Zi + Pi;
             Zr = Zr2 - Zi2 + Pr;
             Zr2 = Zr * Zr;
@@ -96,15 +99,24 @@ class MandelbrotSetModel extends Observable
     /**
      * @return Array containing calculated iterations for each pixel
      */
-    List<Long> getIterationsData() {
-        return Collections.unmodifiableList(iterationsData);
+    public List<Long> getIterationsData() {
+        synchronized(dataLock) { synchronized(iterationsData) {
+            ArrayList<Long> copy = new ArrayList<>(iterationsData.size());
+
+            for(long data : iterationsData)
+                copy.add(data);
+
+            return copy;
+        } }
     }
 
-    long getMaxIterations() {
-        return maxIterations;
+    public long getMaxIterations() {
+        synchronized(maxIterations) {
+            return maxIterations.get();
+        }
     }
 
-    void moveCenter(Point2D dir, int pixels) {
+    public void moveCenter(Point2D dir, int pixels) {
         Utility.normalizeDirectionVector(dir);
         double xChange = xStep * pixels;
         double yChange = yStep * pixels;
@@ -180,25 +192,31 @@ class MandelbrotSetModel extends Observable
     }
 
     private void calculateRange() {
-        xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
-        yRange = new double[]{center.getY() - zoom[1], center.getY() + zoom[1]};
+        synchronized(rangeLock) {
+            xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
+            yRange = new double[]{center.getY() - zoom[1], center.getY() + zoom[1]};
+        }
     }
 
     private void calculateStep() {
-        xStep = getXRange() / Application.WIDTH;
-        yStep = getYRange() / Application.HEIGHT;
+        synchronized(stepLock) {
+            xStep = getXRange() / Application.WIDTH;
+            yStep = getYRange() / Application.HEIGHT;
+        }
     }
 
     void zoom(float zoomChange) {
-        zoom[0] *= (1 - zoomChange);
-        zoom[1] *= (1 - zoomChange);
+        synchronized(zoom) { synchronized(maxIterations) {
+            zoom[0] *= (1 - zoomChange);
+            zoom[1] *= (1 - zoomChange);
 
-        zoomPercent += zoomChange;
-        maxIterations = (zoomPercent > 0) ? (long)(DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS;
-
-        calculateRange();
-        calculateStep();
-        generate();
+            zoomPercent += zoomChange;
+            maxIterations.set((zoomPercent > 0) ? (long) (DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS);
+        }
+            calculateRange();
+            calculateStep();
+            generate();
+        }
     }
 
     private class ForkGenerate extends RecursiveAction

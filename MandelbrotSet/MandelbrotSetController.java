@@ -53,11 +53,11 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     @Override
     public void zoomIn() {
-        model.zoom(zoomPercent);
+        new Thread(() -> model.zoom(zoomPercent)).start();
     }
 
     @Override
     public void zoomOut() {
-        model.zoom(-zoomPercent);
+        new Thread(() -> model.zoom(-zoomPercent)).start();
     }
 }
