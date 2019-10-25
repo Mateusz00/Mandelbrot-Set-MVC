@@ -1,6 +1,5 @@
 package MandelbrotSet;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Point2D;
 
@@ -28,27 +27,26 @@ public class MandelbrotSetController implements MandelbrotSetControls
             mContainer.remove(view);
             view = null;
         }
-
     }
 
     @Override
     public void moveCenterToLeft() {
-        model.moveCenter(new Point2D.Double(-1, 0), movePixelsX);
+        new Thread(() -> model.moveCenter(new Point2D.Double(-1, 0), movePixelsX)).start();
     }
 
     @Override
     public void moveCenterToRight() {
-        model.moveCenter(new Point2D.Double(1, 0), movePixelsX);
+        new Thread(() -> model.moveCenter(new Point2D.Double(1, 0), movePixelsX)).start();
     }
 
     @Override
     public void moveCenterUp() {
-        model.moveCenter(new Point2D.Double(0, -1), movePixelsY);
+        new Thread(() -> model.moveCenter(new Point2D.Double(0, -1), movePixelsY)).start();
     }
 
     @Override
     public void moveCenterDown() {
-        model.moveCenter(new Point2D.Double(0, 1), movePixelsY);
+        new Thread(() -> model.moveCenter(new Point2D.Double(0, 1), movePixelsY)).start();
     }
 
     @Override

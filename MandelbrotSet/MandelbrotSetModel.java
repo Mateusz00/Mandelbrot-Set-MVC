@@ -7,18 +7,17 @@ import java.util.List;
 import java.util.Observable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
-import java.util.concurrent.atomic.AtomicLong;
 
 class MandelbrotSetModel extends Observable
 {
-    private ArrayList<Long> iterationsData;
-    private final Object dataLock = new Object();
+    private final ArrayList<Long> iterationsData;
     private final Object rangeLock = new Object();
     private final Object stepLock = new Object();
+    private final Object iterationsLock = new Object();
     private static final long DEFAULT_MAX_ITERATIONS = 250;
     private static final double DEFAULT_ZOOM_X = 1.7;
     private static final double DEFAULT_ZOOM_Y = 1.3;
-    private final AtomicLong maxIterations = new AtomicLong(DEFAULT_MAX_ITERATIONS);
+    private long maxIterations = DEFAULT_MAX_ITERATIONS;
     private long escapeRadius = 4;
     private final double[] zoom;
     private double zoomPercent = 0;
@@ -46,7 +45,7 @@ class MandelbrotSetModel extends Observable
     }
 
     private void generateConcurrently(int firstPixel, int lastPixel, int firstLine, int lastLine) {
-        synchronized(dataLock) { synchronized(iterationsData) {
+        synchronized(iterationsLock) { synchronized(iterationsData) {
             ForkGenerate fg = new ForkGenerate(firstPixel, lastPixel, firstLine, lastLine);
             pool.invoke(fg);
 
@@ -86,7 +85,7 @@ class MandelbrotSetModel extends Observable
         long   n   = 0;
 
         // Mandelbrot set equation
-        for( ; n < maxIterations.get() && Zr2+Zi2 <= escapeRadius; ++n) {
+        for( ; n < maxIterations && Zr2+Zi2 <= escapeRadius; ++n) {
             Zi = 2 * Zr * Zi + Pi;
             Zr = Zr2 - Zi2 + Pr;
             Zr2 = Zr * Zr;
@@ -100,31 +99,31 @@ class MandelbrotSetModel extends Observable
      * @return Array containing calculated iterations for each pixel
      */
     public List<Long> getIterationsData() {
-        synchronized(dataLock) { synchronized(iterationsData) {
+        synchronized(iterationsData) {
             ArrayList<Long> copy = new ArrayList<>(iterationsData.size());
 
             for(long data : iterationsData)
                 copy.add(data);
 
             return copy;
-        } }
-    }
-
-    public long getMaxIterations() {
-        synchronized(maxIterations) {
-            return maxIterations.get();
         }
     }
 
-    public void moveCenter(Point2D dir, int pixels) {
-        Utility.normalizeDirectionVector(dir);
-        double xChange = xStep * pixels;
-        double yChange = yStep * pixels;
-        Point2D changeVector = new Point2D.Double(xChange * dir.getX(), yChange * dir.getY());
+    public long getMaxIterations() {
+        return maxIterations;
+    }
 
-        center.setLocation(center.getX() + changeVector.getX(), center.getY() + changeVector.getY());
-        calculateRange();
-        moveMandelbrotSet(changeVector);
+    public void moveCenter(Point2D dir, int pixels) {
+        synchronized(stepLock) { synchronized(rangeLock) {
+            Utility.normalizeDirectionVector(dir);
+            double xChange = xStep * pixels;
+            double yChange = yStep * pixels;
+            Point2D changeVector = new Point2D.Double(xChange * dir.getX(), yChange * dir.getY());
+
+            center.setLocation(center.getX() + changeVector.getX(), center.getY() + changeVector.getY());
+            calculateRange();
+            moveMandelbrotSet(changeVector);
+        } }
     }
 
     private void moveMandelbrotSet(Point2D changeVector) {
@@ -144,7 +143,7 @@ class MandelbrotSetModel extends Observable
             int shiftRangeEnd = (xShift > 0) ? Application.WIDTH : -1;
 
             // Shifts array data by xShift and fills emptied cells
-            synchronized(dataLock) { synchronized(iterationsData) {
+            synchronized(iterationsLock) { synchronized(iterationsData) {
                 for(int y = 0; y < Application.HEIGHT; ++y) {
                     int lineOffset = y * Application.WIDTH;
 
@@ -166,7 +165,7 @@ class MandelbrotSetModel extends Observable
             int shiftRangeEnd = (yShift > 0) ? Application.HEIGHT : -1;
 
             // Shifts array data by yShift and fills emptied cells
-            synchronized(dataLock) { synchronized(iterationsData) {
+            synchronized(iterationsLock) { synchronized(iterationsData) {
                 for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
                     int lineOffset = y * Application.WIDTH;
 
@@ -184,11 +183,15 @@ class MandelbrotSetModel extends Observable
     }
 
     private double getXRange() {
-        return (xRange[1] - xRange[0]);
+        synchronized(rangeLock) {
+            return (xRange[1] - xRange[0]);
+        }
     }
 
     private double getYRange() {
-        return (yRange[1] - yRange[0]);
+        synchronized(rangeLock) {
+            return (yRange[1] - yRange[0]);
+        }
     }
 
     private void calculateRange() {
@@ -206,17 +209,17 @@ class MandelbrotSetModel extends Observable
     }
 
     void zoom(float zoomChange) {
-        synchronized(zoom) { synchronized(maxIterations) {
+        synchronized(stepLock) { synchronized(rangeLock) { synchronized(zoom) {
             zoom[0] *= (1 - zoomChange);
             zoom[1] *= (1 - zoomChange);
 
             zoomPercent += zoomChange;
-            maxIterations.set((zoomPercent > 0) ? (long) (DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS);
-        }
+            maxIterations = (zoomPercent > 0) ? (long) (DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS;
+
             calculateRange();
             calculateStep();
             generate();
-        }
+        } } }
     }
 
     private class ForkGenerate extends RecursiveAction
