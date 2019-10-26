@@ -1,5 +1,6 @@
 package MandelbrotSet;
 
+import java.awt.*;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,14 +45,20 @@ public class MandelbrotSetModel extends Observable
         generateConcurrently(0, Application.WIDTH, 0, Application.HEIGHT);
     }
 
-    private void generateConcurrently(int firstPixel, int lastPixel, int firstLine, int lastLine) {
+    private void generateConcurrently(int startX, int endX, int startY, int endY) {
+        generateConcurrently(startX, endX, startY, endY, true);
+    }
+
+    private void generateConcurrently(int startX, int endX, int startY, int endY, boolean showResult) {
         // Ensure that whole set will be generated using the same data
-        synchronized(iterationsLock) { synchronized(iterationsData) { synchronized(stepLock) { synchronized(rangeLock) {
-            ForkGenerate fg = new ForkGenerate(firstPixel, lastPixel, firstLine, lastLine);
+        synchronized(rangeLock) { synchronized(iterationsLock) { synchronized(iterationsData) { synchronized(stepLock) {
+            ForkGenerate fg = new ForkGenerate(startX, endX, startY, endY);
             pool.invoke(fg);
 
-            setChanged();
-            notifyObservers();
+            if(showResult) {
+                setChanged();
+                notifyObservers();
+            }
         } } } }
     }
 
@@ -115,28 +122,34 @@ public class MandelbrotSetModel extends Observable
         return maxIterations;
     }
 
-    public void moveCenter(Point2D dir, int pixels) {
-        synchronized(stepLock) { synchronized(rangeLock) {
-            Utility.normalizeDirectionVector(dir);
-            double xChange = xStep * pixels;
-            double yChange = yStep * pixels;
-            Point2D changeVector = new Point2D.Double(xChange * dir.getX(), yChange * dir.getY());
 
-            center.setLocation(center.getX() + changeVector.getX(), center.getY() + changeVector.getY());
+    /**
+     * @param changeVector which direction and how far(in pixels) will center be moved.
+     */
+    public void moveCenter(Point changeVector) {
+        synchronized(rangeLock) { synchronized(stepLock) {  synchronized(zoom) {
+            double xChange = xStep * changeVector.getX();
+            double yChange = yStep * changeVector.getY();
+
+            center.setLocation(center.getX() + xChange, center.getY() + yChange);
             calculateRange();
             moveMandelbrotSet(changeVector);
-        } }
+        } } }
     }
 
-    private void moveMandelbrotSet(Point2D changeVector) {
-        int xShift = (int) (changeVector.getX() / xStep);
-        int yShift = (int) (changeVector.getY() / yStep);
+    private void moveMandelbrotSet(Point changeVectorPixels) {
+        int xShift = changeVectorPixels.x;
+        int yShift = changeVectorPixels.y;
 
         // Generate new set if nothing can be shifted
         if(Math.abs(xShift) >= Application.WIDTH || Math.abs(yShift) >= Application.HEIGHT) {
             generate();
             return;
         }
+
+        // Fields defining the area where data have to be generated as it holds invalid values
+        int xStart = 0, xEnd = 0, yStart = 0, yEnd = 0;
+        int xStartLine=0, xEndLine = Application.HEIGHT, yStartPixel = 0, yEndPixel = Application.WIDTH;
 
         // Shift left/right (If center moved to the right then shift data to the left)
         if(xShift != 0) {
@@ -154,10 +167,15 @@ public class MandelbrotSetModel extends Observable
                 }
             } }
 
-            if(xShift > 0)
-                generateConcurrently(Application.WIDTH - 1 - xShift, Application.WIDTH, 0, Application.HEIGHT);
-            else
-                generateConcurrently(0, -xShift, 0, Application.HEIGHT);
+            // Defines the area where data have to be generated as it holds invalid values
+            if(xShift > 0) {
+                xStart = Application.WIDTH - xShift;
+                xEnd = Application.WIDTH;
+            }
+            else {
+                xStart = 0;
+                xEnd = -xShift;
+            }
         }
 
         // Shift up/down (If center moved down then shift data upwards)
@@ -176,12 +194,45 @@ public class MandelbrotSetModel extends Observable
                 }
             } }
 
-            // Fill cells that hold invalid data
-            if(yShift > 0)
-                generateConcurrently(0, Application.WIDTH, (Application.HEIGHT - yShift), Application.HEIGHT);
-            else
-                generateConcurrently(0, Application.WIDTH, 0, -yShift);
+            // Defines the area where data have to be generated as it holds invalid values
+            if(yShift > 0) {
+                yStart = Application.HEIGHT - yShift;
+                yEnd = Application.HEIGHT;
+            }
+            else {
+                yStart = 0;
+                yEnd = -yShift;
+            }
         }
+
+        // If data was shifted both vertically and horizontally then generate common area only once
+        if(xShift != 0 && yShift != 0) {
+            // Change area to generate to avoid generating same area twice
+            if(yShift > 0)
+                xEndLine = yStart;
+            else
+                xStartLine = yEnd;
+
+            // Change area to generate to avoid generating same area twice
+            if(xShift > 0)
+                yEndPixel = xStart;
+            else
+                yStartPixel = xEnd;
+
+            // Generate common area
+            generateConcurrently(xStart, xEnd, yStart, yEnd, false);
+        }
+
+        // Fill cells that hold invalid data
+        if(xShift != 0)
+            generateConcurrently(xStart, xEnd, xStartLine, xEndLine, false);
+
+        if(yShift != 0)
+            generateConcurrently(yStartPixel, yEndPixel, yStart, yEnd, false);
+
+        // Update view
+        setChanged();
+        notifyObservers();
     }
 
     private double getXRange() {
@@ -196,22 +247,26 @@ public class MandelbrotSetModel extends Observable
         }
     }
 
+    public Point2D.Double getCenter() {
+        return center;
+    }
+
     private void calculateRange() {
-        synchronized(rangeLock) {
+        synchronized(rangeLock) { synchronized(zoom) {
             xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
             yRange = new double[]{center.getY() - zoom[1], center.getY() + zoom[1]};
-        }
+        } }
     }
 
     private void calculateStep() {
-        synchronized(stepLock) {
+        synchronized(rangeLock) { synchronized(stepLock) {
             xStep = getXRange() / Application.WIDTH;
             yStep = getYRange() / Application.HEIGHT;
-        }
+        } }
     }
 
     public void zoom(float zoomChange) {
-        synchronized(stepLock) { synchronized(rangeLock) { synchronized(zoom) {
+        synchronized(rangeLock) { synchronized(zoom) { synchronized(stepLock) {
             zoom[0] *= (1 - zoomChange);
             zoom[1] *= (1 - zoomChange);
 

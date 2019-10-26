@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
@@ -108,6 +110,14 @@ public class MandelbrotSetView extends JPanel
             @Override
             public void actionPerformed(ActionEvent e) {
                 controller.zoomOut();
+            }
+        });
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(e.getButton() == MouseEvent.BUTTON1)
+                    controller.moveCenterTo(e.getPoint());
             }
         });
     }

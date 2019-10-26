@@ -1,7 +1,6 @@
 package MandelbrotSet;
 
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MandelbrotSetController implements MandelbrotSetControls
@@ -32,12 +31,13 @@ public class MandelbrotSetController implements MandelbrotSetControls
         }
     }
 
-    private void tryMoving(float x, float y, int pixelsChange) {
+    private void tryMoving(Point changeVector) {
+        // Ensures that threads won't queue (makes app more responsive)
         if(!moveLock.isLocked()) {
             new Thread(() -> {
                 if(moveLock.tryLock()) {
                     try {
-                        model.moveCenter(new Point2D.Float(x, y), pixelsChange);
+                        model.moveCenter(changeVector);
                     }
                     finally {
                         moveLock.unlock();
@@ -48,6 +48,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
     }
 
     private void tryZooming(float zoomPercent) {
+        // Ensures that threads won't queue (makes app more responsive)
         if(!zoomLock.isLocked()) {
             new Thread(() -> {
                 if(zoomLock.tryLock()) {
@@ -64,22 +65,31 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     @Override
     public void moveCenterToLeft() {
-        tryMoving(-1, 0, MOVE_PIXELS_X);
+        tryMoving(new Point(-MOVE_PIXELS_X, 0));
     }
 
     @Override
     public void moveCenterToRight() {
-        tryMoving(1, 0, MOVE_PIXELS_X);
+        tryMoving(new Point(MOVE_PIXELS_X, 0));
     }
 
     @Override
     public void moveCenterUp() {
-        tryMoving(0, -1, MOVE_PIXELS_Y);
+        tryMoving(new Point(0, -MOVE_PIXELS_Y));
     }
 
     @Override
     public void moveCenterDown() {
-        tryMoving(0, 1, MOVE_PIXELS_Y);
+        tryMoving(new Point(0, MOVE_PIXELS_Y));
+    }
+
+    @Override
+    public void moveCenterTo(Point point) {
+        Point center = new Point(Application.WIDTH / 2, Application.HEIGHT / 2);
+        Point change = new Point(point.x - center.x, point.y - center.y);
+
+        if(Utility.vectorLength(change) > 0)
+            tryMoving(change);
     }
 
     @Override
