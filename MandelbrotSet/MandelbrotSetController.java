@@ -2,15 +2,18 @@ package MandelbrotSet;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MandelbrotSetController implements MandelbrotSetControls
 {
-    private static final int movePixelsX = (int) (Application.WIDTH * 0.02);
-    private static final int movePixelsY = (int) (Application.HEIGHT * 0.02);
-    private static final float zoomPercent = 0.07f;
+    private static final int MOVE_PIXELS_X = (int) (Application.WIDTH * 0.02);
+    private static final int MOVE_PIXELS_Y = (int) (Application.HEIGHT * 0.02);
+    private static final float ZOOM_PERCENT = 0.07f;
     private MandelbrotSetModel model;
     private MandelbrotSetView view;
     private Container mContainer;
+    private final ReentrantLock zoomLock = new ReentrantLock();
+    private final ReentrantLock moveLock = new ReentrantLock();
 
     public MandelbrotSetController(MandelbrotSetModel model1, Container container) {
         model = model1;
@@ -29,33 +32,63 @@ public class MandelbrotSetController implements MandelbrotSetControls
         }
     }
 
+    private void tryMoving(float x, float y, int pixelsChange) {
+        if(!moveLock.isLocked()) {
+            new Thread(() -> {
+                if(moveLock.tryLock()) {
+                    try {
+                        model.moveCenter(new Point2D.Float(x, y), pixelsChange);
+                    }
+                    finally {
+                        moveLock.unlock();
+                    }
+                }
+            }).start();
+        }
+    }
+
+    private void tryZooming(float zoomPercent) {
+        if(!zoomLock.isLocked()) {
+            new Thread(() -> {
+                if(zoomLock.tryLock()) {
+                    try {
+                        model.zoom(zoomPercent);
+                    }
+                    finally {
+                        zoomLock.unlock();
+                    }
+                }
+            }).start();
+        }
+    }
+
     @Override
     public void moveCenterToLeft() {
-        new Thread(() -> model.moveCenter(new Point2D.Double(-1, 0), movePixelsX)).start();
+        tryMoving(-1, 0, MOVE_PIXELS_X);
     }
 
     @Override
     public void moveCenterToRight() {
-        new Thread(() -> model.moveCenter(new Point2D.Double(1, 0), movePixelsX)).start();
+        tryMoving(1, 0, MOVE_PIXELS_X);
     }
 
     @Override
     public void moveCenterUp() {
-        new Thread(() -> model.moveCenter(new Point2D.Double(0, -1), movePixelsY)).start();
+        tryMoving(0, -1, MOVE_PIXELS_Y);
     }
 
     @Override
     public void moveCenterDown() {
-        new Thread(() -> model.moveCenter(new Point2D.Double(0, 1), movePixelsY)).start();
+        tryMoving(0, 1, MOVE_PIXELS_Y);
     }
 
     @Override
     public void zoomIn() {
-        new Thread(() -> model.zoom(zoomPercent)).start();
+        tryZooming(ZOOM_PERCENT);
     }
 
     @Override
     public void zoomOut() {
-        new Thread(() -> model.zoom(-zoomPercent)).start();
+        tryZooming(-ZOOM_PERCENT);
     }
 }

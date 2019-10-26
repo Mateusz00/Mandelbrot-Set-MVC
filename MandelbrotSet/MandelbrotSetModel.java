@@ -8,7 +8,7 @@ import java.util.Observable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 
-class MandelbrotSetModel extends Observable
+public class MandelbrotSetModel extends Observable
 {
     private final ArrayList<Long> iterationsData;
     private final Object rangeLock = new Object();
@@ -40,18 +40,19 @@ class MandelbrotSetModel extends Observable
     /**
      * Calculates number of iterations for every pixel of the main window
      */
-    void generate() {
+    public void generate() {
         generateConcurrently(0, Application.WIDTH, 0, Application.HEIGHT);
     }
 
     private void generateConcurrently(int firstPixel, int lastPixel, int firstLine, int lastLine) {
-        synchronized(iterationsLock) { synchronized(iterationsData) {
+        // Ensure that whole set will be generated using the same data
+        synchronized(iterationsLock) { synchronized(iterationsData) { synchronized(stepLock) { synchronized(rangeLock) {
             ForkGenerate fg = new ForkGenerate(firstPixel, lastPixel, firstLine, lastLine);
             pool.invoke(fg);
 
             setChanged();
             notifyObservers();
-        } }
+        } } } }
     }
 
     private void generateBlock(int firstPixel, int lastPixel, int firstLine, int lastLine) {
@@ -60,9 +61,10 @@ class MandelbrotSetModel extends Observable
     }
 
     /**
-     * Calculates number of iterations for every pixel in range <firstPixel, lastPixel)
+     * Calculates number of iterations for every pixel in range &lt;firstPixel, lastPixel)
      * @param firstPixel inclusive
      * @param lastPixel exclusive
+     * @param line line
      */
     private void generateLine(int firstPixel, int lastPixel, int line) {
         double Pi = yRange[0] + yStep*line;
@@ -208,7 +210,7 @@ class MandelbrotSetModel extends Observable
         }
     }
 
-    void zoom(float zoomChange) {
+    public void zoom(float zoomChange) {
         synchronized(stepLock) { synchronized(rangeLock) { synchronized(zoom) {
             zoom[0] *= (1 - zoomChange);
             zoom[1] *= (1 - zoomChange);
