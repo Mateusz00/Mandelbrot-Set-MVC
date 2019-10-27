@@ -1,34 +1,32 @@
 package MandelbrotSet;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MandelbrotSetController implements MandelbrotSetControls
 {
-    private static final int MOVE_PIXELS_X = (int) (Application.WIDTH * 0.02);
-    private static final int MOVE_PIXELS_Y = (int) (Application.HEIGHT * 0.02);
+    private final int MOVE_PIXELS_X;
+    private final int MOVE_PIXELS_Y;
     private static final float ZOOM_PERCENT = 0.07f;
     private MandelbrotSetModel model;
     private MandelbrotSetView view;
-    private Container mContainer;
     private final ReentrantLock zoomLock = new ReentrantLock();
     private final ReentrantLock moveLock = new ReentrantLock();
 
-    public MandelbrotSetController(MandelbrotSetModel model1, Container container) {
+    public MandelbrotSetController(MandelbrotSetModel model1) {
         model = model1;
-        mContainer = container;
+        MOVE_PIXELS_X = (int) (model.getSize().width * 0.02);
+        MOVE_PIXELS_Y = (int) (model.getSize().height * 0.02);
     }
 
     public void setView(MandelbrotSetView view1){
-        mContainer.add(view1);
         view = view1;
     }
 
     public void removeView(MandelbrotSetView view1) {
-        if(view == view1) {
-            mContainer.remove(view);
+        if(view == view1)
             view = null;
-        }
     }
 
     private void tryMoving(Point changeVector) {
@@ -85,7 +83,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     @Override
     public void moveCenterTo(Point point) {
-        Point center = new Point(Application.WIDTH / 2, Application.HEIGHT / 2);
+        Point center = new Point(model.getSize().width / 2, model.getSize().height / 2);
         Point change = new Point(point.x - center.x, point.y - center.y);
 
         if(Utility.vectorLength(change) > 0)

@@ -29,11 +29,19 @@ public class MandelbrotSetModel extends Observable
     private double xStep;
     private static int THRESHOLD_Y = 50;
     private ForkJoinPool pool = ForkJoinPool.commonPool();
+    private int mWidth;
+    private int mHeight;
 
-    public MandelbrotSetModel() {
-        iterationsData = new ArrayList<>(Collections.nCopies(Application.HEIGHT * Application.WIDTH, 0L));
+    /**
+     * @param size Mandelbrot set size
+     */
+    public MandelbrotSetModel(Dimension size) {
+        mWidth = size.width;
+        mHeight = size.height;
+        iterationsData = new ArrayList<>(Collections.nCopies(mHeight * mWidth, 0L));
         center = new Point2D.Double(-0.5, 0.1);
-        zoom   = new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y};
+        zoom = new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y};
+        
         calculateRange();
         calculateStep();
     }
@@ -42,7 +50,7 @@ public class MandelbrotSetModel extends Observable
      * Calculates number of iterations for every pixel of the main window
      */
     public void generate() {
-        generateConcurrently(0, Application.WIDTH, 0, Application.HEIGHT);
+        generateConcurrently(0, mWidth, 0, mHeight);
     }
 
     private void generateConcurrently(int startX, int endX, int startY, int endY) {
@@ -78,7 +86,7 @@ public class MandelbrotSetModel extends Observable
         double Pr = xRange[0] + xStep*firstPixel;
 
         for(int i = firstPixel; i < lastPixel; ++i, Pr += xStep)
-            iterationsData.set(line * Application.WIDTH + i, getIterations(Pr, Pi));
+            iterationsData.set(line * mWidth + i, getIterations(Pr, Pi));
     }
 
     /**
@@ -122,6 +130,9 @@ public class MandelbrotSetModel extends Observable
         return maxIterations;
     }
 
+    public Dimension getSize() {
+        return new Dimension(mWidth, mHeight);
+    }
 
     /**
      * @param changeVector which direction and how far(in pixels) will center be moved.
@@ -142,25 +153,25 @@ public class MandelbrotSetModel extends Observable
         int yShift = changeVectorPixels.y;
 
         // Generate new set if nothing can be shifted
-        if(Math.abs(xShift) >= Application.WIDTH || Math.abs(yShift) >= Application.HEIGHT) {
+        if(Math.abs(xShift) >= mWidth || Math.abs(yShift) >= mHeight) {
             generate();
             return;
         }
 
         // Fields defining the area where data have to be generated as it holds invalid values
         int xStart = 0, xEnd = 0, yStart = 0, yEnd = 0;
-        int xStartLine=0, xEndLine = Application.HEIGHT, yStartPixel = 0, yEndPixel = Application.WIDTH;
+        int xStartLine=0, xEndLine = mHeight, yStartPixel = 0, yEndPixel = mWidth;
 
         // Shift left/right (If center moved to the right then shift data to the left)
         if(xShift != 0) {
-            int shiftRangeBeg = (xShift > 0) ? xShift : (Application.WIDTH - 1 + xShift);
+            int shiftRangeBeg = (xShift > 0) ? xShift : (mWidth - 1 + xShift);
             int direction = xShift / Math.abs(xShift); // Increment when moving center to the right, decrement otherwise
-            int shiftRangeEnd = (xShift > 0) ? Application.WIDTH : -1;
+            int shiftRangeEnd = (xShift > 0) ? mWidth : -1;
 
             // Shifts array data by xShift and fills emptied cells
             synchronized(iterationsLock) { synchronized(iterationsData) {
-                for(int y = 0; y < Application.HEIGHT; ++y) {
-                    int lineOffset = y * Application.WIDTH;
+                for(int y = 0; y < mHeight; ++y) {
+                    int lineOffset = y * mWidth;
 
                     for(int i = shiftRangeBeg; i != shiftRangeEnd; i += direction)
                         iterationsData.set(i - xShift + lineOffset, iterationsData.get(i + lineOffset));
@@ -169,8 +180,8 @@ public class MandelbrotSetModel extends Observable
 
             // Defines the area where data have to be generated as it holds invalid values
             if(xShift > 0) {
-                xStart = Application.WIDTH - xShift;
-                xEnd = Application.WIDTH;
+                xStart = mWidth - xShift;
+                xEnd = mWidth;
             }
             else {
                 xStart = 0;
@@ -180,24 +191,24 @@ public class MandelbrotSetModel extends Observable
 
         // Shift up/down (If center moved down then shift data upwards)
         if(yShift != 0) {
-            int shiftRangeBeg = (yShift > 0) ? yShift : (Application.HEIGHT - 1 + yShift);
+            int shiftRangeBeg = (yShift > 0) ? yShift : (mHeight - 1 + yShift);
             int direction = yShift / Math.abs(yShift); // Increment when moving center down, decrement otherwise
-            int shiftRangeEnd = (yShift > 0) ? Application.HEIGHT : -1;
+            int shiftRangeEnd = (yShift > 0) ? mHeight : -1;
 
             // Shifts array data by yShift and fills emptied cells
             synchronized(iterationsLock) { synchronized(iterationsData) {
                 for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
-                    int lineOffset = y * Application.WIDTH;
+                    int lineOffset = y * mWidth;
 
-                    for(int i = 0; i < Application.WIDTH; ++i)
-                        iterationsData.set(i + lineOffset - yShift * Application.WIDTH, iterationsData.get(i + lineOffset));
+                    for(int i = 0; i < mWidth; ++i)
+                        iterationsData.set(i + lineOffset - yShift * mWidth, iterationsData.get(i + lineOffset));
                 }
             } }
 
             // Defines the area where data have to be generated as it holds invalid values
             if(yShift > 0) {
-                yStart = Application.HEIGHT - yShift;
-                yEnd = Application.HEIGHT;
+                yStart = mHeight - yShift;
+                yEnd = mHeight;
             }
             else {
                 yStart = 0;
@@ -260,8 +271,8 @@ public class MandelbrotSetModel extends Observable
 
     private void calculateStep() {
         synchronized(rangeLock) { synchronized(stepLock) {
-            xStep = getXRange() / Application.WIDTH;
-            yStep = getYRange() / Application.HEIGHT;
+            xStep = getXRange() / mWidth;
+            yStep = getYRange() / mHeight;
         } }
     }
 

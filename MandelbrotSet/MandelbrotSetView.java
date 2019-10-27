@@ -16,12 +16,17 @@ public class MandelbrotSetView extends JPanel
     private MandelbrotSetModel model;
     private BufferedImage mandelbrotImg;
     private List<Long> iterationsData;
+    private Dimension currentSize;
 
     public MandelbrotSetView(MandelbrotSetModel pModel, MandelbrotSetControls pController) {
         model = pModel;
         controller = pController;
         model.addObserver(new ModelObserver());
-        mandelbrotImg = new BufferedImage(Application.WIDTH, Application.HEIGHT, BufferedImage.TYPE_INT_RGB);
+
+        currentSize = model.getSize();
+        setPreferredSize(currentSize);
+        mandelbrotImg = new BufferedImage(currentSize.width, currentSize.height, BufferedImage.TYPE_INT_RGB);
+
         addBindings();
     }
 
@@ -43,7 +48,7 @@ public class MandelbrotSetView extends JPanel
         SwingUtilities.invokeLater(() -> {
             for(int i = 0; i < iterationsData.size(); ++i) {
                 float[] HSB = calculateHSB(iterationsData.get(i), maxIterations);
-                mandelbrotImg.setRGB(i % Application.WIDTH, i / Application.WIDTH, Color.HSBtoRGB(HSB[0], HSB[1], HSB[2]));
+                mandelbrotImg.setRGB(i % currentSize.width, i / currentSize.width, Color.HSBtoRGB(HSB[0], HSB[1], HSB[2]));
             }
 
             repaint();
