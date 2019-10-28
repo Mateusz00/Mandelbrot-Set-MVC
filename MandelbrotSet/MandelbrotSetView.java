@@ -1,5 +1,8 @@
 package MandelbrotSet;
 
+import MandelbrotSet.RGBPickers.RGBPicker;
+import MandelbrotSet.RGBPickers.PickerRed;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -16,7 +19,9 @@ public class MandelbrotSetView extends JPanel
     private MandelbrotSetModel model;
     private BufferedImage mandelbrotImg;
     private List<Long> iterationsData;
+    private long currentMaxIterations = 0;
     private Dimension currentSize;
+    private RGBPicker colorPicker = new PickerRed();
 
     public MandelbrotSetView(MandelbrotSetModel pModel, MandelbrotSetControls pController) {
         model = pModel;
@@ -38,33 +43,31 @@ public class MandelbrotSetView extends JPanel
         }
     }
 
+    public void setColoring(RGBPicker picker) {
+        colorPicker = picker;
+
+        calculateColors();
+        repaint();
+    }
+
     /**
      * Assigns RGB values to each pixel based on number of iterations for point representing that pixel
      */
     private void updateView() {
         iterationsData = model.getIterationsData();
-        long maxIterations = model.getMaxIterations();
+        currentMaxIterations = model.getMaxIterations();
 
         SwingUtilities.invokeLater(() -> {
-            for(int i = 0; i < iterationsData.size(); ++i) {
-                float[] HSB = calculateHSB(iterationsData.get(i), maxIterations);
-                mandelbrotImg.setRGB(i % currentSize.width, i / currentSize.width, Color.HSBtoRGB(HSB[0], HSB[1], HSB[2]));
-            }
-
+            calculateColors();
             repaint();
         });
     }
 
-    /**
-     * @return float array with 3 values (0 - Hue, 1 - Saturation, 2 - Brightness)
-     */
-    private float[] calculateHSB(long iterations, long maxIterations) {
-        if(iterations == maxIterations)
-            return new float[]{0, 0, 0}; // Black in HSB
-
-        float h = ((float)iterations / maxIterations), s = 1, b = 1;
-
-        return new float[]{h, s, b};
+    private void calculateColors() {
+        for(int i = 0; i < iterationsData.size(); ++i) {
+            int color = colorPicker.iterationsToRGB(iterationsData.get(i), currentMaxIterations);
+            mandelbrotImg.setRGB(i % currentSize.width, i / currentSize.width, color);
+        }
     }
 
     @Override
