@@ -8,12 +8,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.text.NumberFormat;
 
 public class Application
 {
     private static final int WIDTH = 850;
     private static final int HEIGHT = 600;
-    private JFrame mainWindow = new JFrame("Mandelbrot Set");
+    private final JFrame mainWindow = new JFrame("Mandelbrot Set");
     private MandelbrotSetController controller;
 
     public static void main(String[] args) {
@@ -32,6 +33,7 @@ public class Application
         mainWindow.setResizable(false);
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainWindow.add(view);
+        mainWindow.getContentPane().setPreferredSize(new Dimension(WIDTH, HEIGHT));
         mainWindow.pack();
         mainWindow.setVisible(true);
 
@@ -43,8 +45,27 @@ public class Application
         JMenuBar menuBar = new JMenuBar();
 
         addColorsMenu(view, menuBar);
+        addGenerateMenu(menuBar);
 
         frame.setJMenuBar(menuBar);
+    }
+
+    private void addGenerateMenu(JMenuBar menuBar) {
+        JMenu generateMenu = new JMenu("Generate");
+        generateMenu.setMnemonic(KeyEvent.VK_G);
+        menuBar.add(generateMenu);
+
+        JMenuItem toImage = new JMenuItem("Image...");
+        toImage.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, ActionEvent.SHIFT_MASK));
+        toImage.setMnemonic(KeyEvent.VK_I);
+        toImage.addActionListener((e) -> createImageDialog());
+        generateMenu.add(toImage);
+
+        JMenuItem toVideo = new JMenuItem("Video...");
+        toVideo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, ActionEvent.SHIFT_MASK));
+        toVideo.setMnemonic(KeyEvent.VK_V);
+        toVideo.addActionListener((e) -> createVideoDialog());
+        generateMenu.add(toVideo);
     }
 
     private void addColorsMenu(MandelbrotSetView view, JMenuBar menuBar) {
@@ -67,4 +88,49 @@ public class Application
         blue.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, ActionEvent.CTRL_MASK));
         colors.add(blue);
     }
+
+    void createImageDialog() {
+        JDialog dialog = new JDialog(mainWindow, "Generate image", true);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        JPanel mainPanel = new JPanel();
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        dialog.add(mainPanel);
+
+        NumberFormat doubleFormatter = NumberFormat.getNumberInstance();
+        doubleFormatter.setMinimumFractionDigits(1);
+        doubleFormatter.setMaximumFractionDigits(Double.MAX_EXPONENT);
+
+        JFormattedTextField centerX = new JFormattedTextField(doubleFormatter);
+        centerX.setColumns(10);
+        centerX.setValue(0);
+        mainPanel.add(centerX);
+
+        // TODO
+
+        JFormattedTextField centerY = new JFormattedTextField(doubleFormatter);
+        centerY.setValue(0);
+        centerY.setColumns(10);
+        mainPanel.add(centerY);
+
+        dialog.pack();
+        dialog.setVisible(true);
+    }
+
+    void createVideoDialog () {
+        JDialog dialog = new JDialog(mainWindow, "Generate video", true);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // TODO
+
+        dialog.pack();
+        dialog.setVisible(true);
+    }
 }
+
+/**
+ * add setModel to view. Remove model from ctor of view. Add listeners in setModel
+ * Controller sets view's model
+ * Controller invokes view's onRemoval that deletes listeners from model's list
+ *
+ * **/
