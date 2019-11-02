@@ -29,16 +29,14 @@ public class MandelbrotSetModel extends Observable
     private double xStep;
     private static int THRESHOLD_Y = 50;
     private ForkJoinPool pool = ForkJoinPool.commonPool();
-    private int mWidth;
-    private int mHeight;
+    private Dimension size;
 
     /**
      * @param size Mandelbrot set size
      */
     public MandelbrotSetModel(Dimension size) {
-        mWidth = size.width;
-        mHeight = size.height;
-        iterationsData = new ArrayList<>(Collections.nCopies(mHeight * mWidth, 0L));
+        this.size = size;
+        iterationsData = new ArrayList<>(Collections.nCopies(size.width * size.height, 0L));
         center = new Point2D.Double(-0.5, 0.1);
         zoom = new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y};
         
@@ -50,7 +48,7 @@ public class MandelbrotSetModel extends Observable
      * Calculates number of iterations for every pixel of the main window
      */
     public void generate() {
-        generateConcurrently(0, mWidth, 0, mHeight);
+        generateConcurrently(0, size.width, 0, size.height);
     }
 
     private void generateConcurrently(int startX, int endX, int startY, int endY) {
@@ -86,7 +84,7 @@ public class MandelbrotSetModel extends Observable
         double Pr = xRange[0] + xStep*firstPixel;
 
         for(int i = firstPixel; i < lastPixel; ++i, Pr += xStep)
-            iterationsData.set(line * mWidth + i, getIterations(Pr, Pi));
+            iterationsData.set(line * size.width + i, getIterations(Pr, Pi));
     }
 
     /**
@@ -126,14 +124,6 @@ public class MandelbrotSetModel extends Observable
         }
     }
 
-    public long getMaxIterations() {
-        return maxIterations;
-    }
-
-    public Dimension getSize() {
-        return new Dimension(mWidth, mHeight);
-    }
-
     /**
      * @param changeVector which direction and how far(in pixels) will center be moved.
      */
@@ -153,25 +143,25 @@ public class MandelbrotSetModel extends Observable
         int yShift = changeVectorPixels.y;
 
         // Generate new set if nothing can be shifted
-        if(Math.abs(xShift) >= mWidth || Math.abs(yShift) >= mHeight) {
+        if(Math.abs(xShift) >= size.width || Math.abs(yShift) >= size.height) {
             generate();
             return;
         }
 
         // Fields defining the area where data have to be generated as it holds invalid values
         int xStart = 0, xEnd = 0, yStart = 0, yEnd = 0;
-        int xStartLine=0, xEndLine = mHeight, yStartPixel = 0, yEndPixel = mWidth;
+        int xStartLine=0, xEndLine = size.height, yStartPixel = 0, yEndPixel = size.width;
 
         // Shift left/right (If center moved to the right then shift data to the left)
         if(xShift != 0) {
-            int shiftRangeBeg = (xShift > 0) ? xShift : (mWidth - 1 + xShift);
+            int shiftRangeBeg = (xShift > 0) ? xShift : (size.width - 1 + xShift);
             int direction = xShift / Math.abs(xShift); // Increment when moving center to the right, decrement otherwise
-            int shiftRangeEnd = (xShift > 0) ? mWidth : -1;
+            int shiftRangeEnd = (xShift > 0) ? size.width : -1;
 
             // Shifts array data by xShift and fills emptied cells
             synchronized(iterationsLock) { synchronized(iterationsData) {
-                for(int y = 0; y < mHeight; ++y) {
-                    int lineOffset = y * mWidth;
+                for(int y = 0; y < size.height; ++y) {
+                    int lineOffset = y * size.width;
 
                     for(int i = shiftRangeBeg; i != shiftRangeEnd; i += direction)
                         iterationsData.set(i - xShift + lineOffset, iterationsData.get(i + lineOffset));
@@ -180,8 +170,8 @@ public class MandelbrotSetModel extends Observable
 
             // Defines the area where data have to be generated as it holds invalid values
             if(xShift > 0) {
-                xStart = mWidth - xShift;
-                xEnd = mWidth;
+                xStart = size.width - xShift;
+                xEnd = size.width;
             }
             else {
                 xStart = 0;
@@ -191,24 +181,24 @@ public class MandelbrotSetModel extends Observable
 
         // Shift up/down (If center moved down then shift data upwards)
         if(yShift != 0) {
-            int shiftRangeBeg = (yShift > 0) ? yShift : (mHeight - 1 + yShift);
+            int shiftRangeBeg = (yShift > 0) ? yShift : (size.height - 1 + yShift);
             int direction = yShift / Math.abs(yShift); // Increment when moving center down, decrement otherwise
-            int shiftRangeEnd = (yShift > 0) ? mHeight : -1;
+            int shiftRangeEnd = (yShift > 0) ? size.height : -1;
 
             // Shifts array data by yShift and fills emptied cells
             synchronized(iterationsLock) { synchronized(iterationsData) {
                 for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
-                    int lineOffset = y * mWidth;
+                    int lineOffset = y * size.width;
 
-                    for(int i = 0; i < mWidth; ++i)
-                        iterationsData.set(i + lineOffset - yShift * mWidth, iterationsData.get(i + lineOffset));
+                    for(int i = 0; i < size.width; ++i)
+                        iterationsData.set(i + lineOffset - yShift * size.width, iterationsData.get(i + lineOffset));
                 }
             } }
 
             // Defines the area where data have to be generated as it holds invalid values
             if(yShift > 0) {
-                yStart = mHeight - yShift;
-                yEnd = mHeight;
+                yStart = size.height - yShift;
+                yEnd = size.height;
             }
             else {
                 yStart = 0;
@@ -258,10 +248,6 @@ public class MandelbrotSetModel extends Observable
         }
     }
 
-    public Point2D.Double getCenter() {
-        return center;
-    }
-
     private void calculateRange() {
         synchronized(rangeLock) { synchronized(zoom) {
             xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
@@ -271,8 +257,8 @@ public class MandelbrotSetModel extends Observable
 
     private void calculateStep() {
         synchronized(rangeLock) { synchronized(stepLock) {
-            xStep = getXRange() / mWidth;
-            yStep = getYRange() / mHeight;
+            xStep = getXRange() / size.width;
+            yStep = getYRange() / size.height;
         } }
     }
 
@@ -288,6 +274,49 @@ public class MandelbrotSetModel extends Observable
             calculateStep();
             generate();
         } } }
+    }
+
+    public Dimension getSize() {
+        return size;
+    }
+
+    public void setMaxIterations(long maxIterations) {
+        this.maxIterations = maxIterations;
+    }
+
+    public long getMaxIterations() {
+        return maxIterations;
+    }
+
+    public Point2D.Double getCenter() {
+        return center;
+    }
+
+    public void setCenter(Point2D.Double center) {
+        this.center = center;
+    }
+
+    public long getEscapeRadius() {
+        return escapeRadius;
+    }
+
+    public void setEscapeRadius(long escapeRadius) {
+        this.escapeRadius = escapeRadius;
+    }
+
+    /**
+     * @return model's zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
+     */
+    public double[] getZoom() {
+        return zoom;
+    }
+
+    /**
+     * @param zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
+     */
+    public void setZoom(double[] zoom) {
+        this.zoom[0] = zoom[0];
+        this.zoom[1] = zoom[1];
     }
 
     private class ForkGenerate extends RecursiveAction

@@ -15,4 +15,9 @@ public class PickerRedDark implements RGBPicker
 
         return Color.HSBtoRGB(h, 1, b);
     }
+
+    @Override
+    public String getDescription() {
+        return "Dark red";
+    }
 }

@@ -3,11 +3,17 @@ package MandelbrotSet;
 import MandelbrotSet.RGBPickers.PickerBlue;
 import MandelbrotSet.RGBPickers.PickerRed;
 import MandelbrotSet.RGBPickers.PickerRedDark;
+import MandelbrotSet.RGBPickers.RGBPicker;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.Format;
 import java.text.NumberFormat;
 
 public class Application
@@ -90,31 +96,158 @@ public class Application
     }
 
     void createImageDialog() {
+        // Set up dialog
         JDialog dialog = new JDialog(mainWindow, "Generate image", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setResizable(false);
 
+        // Create container
         JPanel mainPanel = new JPanel();
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setLayout(new BorderLayout());
+
+        // Add panels to main panel
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.PAGE_AXIS));
+        mainPanel.add(formPanel, BorderLayout.CENTER);
+
+        JPanel lastPanel = new JPanel();
+        lastPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        mainPanel.add(lastPanel, BorderLayout.PAGE_END);
+
+        // Add panels to form panel
+        Border marginBorder = BorderFactory.createEmptyBorder(0, 0, 2, 0);
+
+        JPanel panelCenter = new JPanel();
+        panelCenter.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Center")));
+        JPanel panelZoom = new JPanel();
+        panelZoom.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Zoom")));
+        JPanel panelIterations = new JPanel();
+        panelIterations.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Max iterations")));
+        JPanel panelRadius = new JPanel();
+        panelRadius.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Escape radius")));
+        JPanel panelRGBPicker = new JPanel();
+        panelRGBPicker.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Coloring"),
+                        BorderFactory.createEmptyBorder(3, 3, 4, 3))));
+        panelRGBPicker.setLayout(new BorderLayout());
+        JPanel panelFileChooser = new JPanel();
+        panelFileChooser.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Choose destination")));
+        formPanel.add(panelCenter);
+        formPanel.add(panelZoom);
+        formPanel.add(panelIterations);
+        formPanel.add(panelRadius);
+        formPanel.add(panelRGBPicker);
+        formPanel.add(panelFileChooser);
+
+        // Create formats
+        NumberFormat doubleFormat = NumberFormat.getNumberInstance();
+        doubleFormat.setMinimumFractionDigits(1);
+        doubleFormat.setMaximumFractionDigits(Double.MAX_EXPONENT);
+
+        DecimalFormat decimalFormat = new DecimalFormat();
+        decimalFormat.setMaximumIntegerDigits(19);
+        decimalFormat.setMaximumFractionDigits(0);
+        decimalFormat.setRoundingMode(RoundingMode.FLOOR);
+
+        // Add formatted text fields
+        JFormattedTextField centerX = createFieldAndLabel(doubleFormat, panelCenter, "x:");
+        JFormattedTextField centerY = createFieldAndLabel(doubleFormat, panelCenter, "y:");
+        JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, panelZoom, "x:");
+        JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, panelZoom, "y:");
+
+        JFormattedTextField maxIterations = new JFormattedTextField(decimalFormat);
+        maxIterations.setColumns(24);
+        panelIterations.add(maxIterations);
+
+        JFormattedTextField escapeRadius = new JFormattedTextField(decimalFormat);
+        escapeRadius.setColumns(24);
+        panelRadius.add(escapeRadius);
+
+        // Choose color
+        Object[] coloringAlgorithms = {new PickerRed(), new PickerRedDark(), new PickerBlue()};
+        JComboBox colors = new JComboBox(coloringAlgorithms);
+        colors.setRenderer(new RGBPickerComboBoxRenderer());
+        panelRGBPicker.add(colors, BorderLayout.WEST);
+
+        // File chooser
+        final JTextField saveDestination = new JTextField("", 16);
+        saveDestination.setEditable(false);
+        panelFileChooser.add(saveDestination);
+
+        JButton fileChooseButton = new JButton("Save as...");
+        fileChooseButton.addActionListener((e) -> {
+            // TODO
+        });
+        panelFileChooser.add(fileChooseButton);
+
+        // Last panel components
+        JButton currentDataGetter = new JButton("Current data");
+        currentDataGetter.addActionListener((e) -> {
+            centerX.setValue(controller.getCenter().getX());
+            centerY.setValue(controller.getCenter().getY());
+            zoomX.setValue((controller.getZoom())[0]);
+            zoomY.setValue((controller.getZoom())[1]);
+            maxIterations.setValue(controller.getMaxIterations());
+            escapeRadius.setValue(controller.getEscapeRadius());
+            colors.getModel().setSelectedItem(controller.getCurrentRGBPicker());
+        });
+        lastPanel.add(currentDataGetter);
+
+        JButton generateButton = new JButton("Generate");
+        generateButton.addActionListener((e) -> {
+            // TODO
+        });
+        lastPanel.add(generateButton);
+
         dialog.add(mainPanel);
-
-        NumberFormat doubleFormatter = NumberFormat.getNumberInstance();
-        doubleFormatter.setMinimumFractionDigits(1);
-        doubleFormatter.setMaximumFractionDigits(Double.MAX_EXPONENT);
-
-        JFormattedTextField centerX = new JFormattedTextField(doubleFormatter);
-        centerX.setColumns(10);
-        centerX.setValue(0);
-        mainPanel.add(centerX);
-
-        // TODO
-
-        JFormattedTextField centerY = new JFormattedTextField(doubleFormatter);
-        centerY.setValue(0);
-        centerY.setColumns(10);
-        mainPanel.add(centerY);
-
         dialog.pack();
+
+        // Position dialog (Dialog's center should be at the same position as mainFrame's center)
+        Point center = getMainFrameCenterPosition();
+        dialog.setLocation(center.x - dialog.getWidth() / 2, center.y - dialog.getHeight() / 2);
         dialog.setVisible(true);
+    }
+
+    private Point getMainFrameCenterPosition() {
+        Dimension dimension = mainWindow.getSize();
+        Point centerTopLeftDistance = new Point(dimension.width / 2, dimension.height / 2);
+        Point topLeft = mainWindow.getLocationOnScreen();
+
+        return new Point(centerTopLeftDistance.x + topLeft.x, centerTopLeftDistance.y + topLeft.y);
+    }
+
+    private class RGBPickerComboBoxRenderer extends BasicComboBoxRenderer
+    {
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value, int index,
+                                                      boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            setText(((RGBPicker) value).getDescription());
+
+            return this;
+        }
+    }
+
+    /**
+     * Creates FormattedTextField and label and adds them to specified panel
+     */
+    private JFormattedTextField createFieldAndLabel(Format format, JPanel panel, String label) {
+        JFormattedTextField field = new JFormattedTextField(format);
+        field.setColumns(10);
+        field.setValue(0);
+
+        JLabel centerXLabel = new JLabel(label);
+        centerXLabel.setLabelFor(field);
+        panel.add(centerXLabel);
+        panel.add(field);
+
+        return field;
     }
 
     void createVideoDialog () {
@@ -127,10 +260,3 @@ public class Application
         dialog.setVisible(true);
     }
 }
-
-/**
- * add setModel to view. Remove model from ctor of view. Add listeners in setModel
- * Controller sets view's model
- * Controller invokes view's onRemoval that deletes listeners from model's list
- *
- * **/

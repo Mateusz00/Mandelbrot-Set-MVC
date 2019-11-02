@@ -1,7 +1,10 @@
 package MandelbrotSet;
 
+import MandelbrotSet.RGBPickers.RGBPicker;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MandelbrotSetController implements MandelbrotSetControls
@@ -98,5 +101,47 @@ public class MandelbrotSetController implements MandelbrotSetControls
     @Override
     public void zoomOut() {
         tryZooming(-ZOOM_PERCENT);
+    }
+
+    public void setMaxIterations(long maxIterations) {
+        model.setMaxIterations(maxIterations);
+    }
+
+    public long getMaxIterations() {
+        return model.getMaxIterations();
+    }
+
+    public Point2D.Double getCenter() {
+        return model.getCenter();
+    }
+
+    public void setCenter(Point2D.Double center) {
+        model.setCenter(center);
+    }
+
+    public long getEscapeRadius() {
+        return model.getEscapeRadius();
+    }
+
+    public void setEscapeRadius(long escapeRadius) {
+        setEscapeRadius(escapeRadius);
+    }
+
+    /**
+     * @return model's zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
+     */
+    public double[] getZoom() {
+        return model.getZoom();
+    }
+
+    /**
+     * @param zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
+     */
+    public void setZoom(double[] zoom) {
+        model.setZoom(zoom);
+    }
+
+    public RGBPicker getCurrentRGBPicker() {
+        return view.getRGBPicker();
     }
 }

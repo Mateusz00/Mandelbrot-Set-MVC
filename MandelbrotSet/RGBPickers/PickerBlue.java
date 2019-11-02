@@ -18,4 +18,9 @@ public class PickerBlue implements RGBPicker
 
         return rgb2.getRGB();
     }
+
+    @Override
+    public String getDescription() {
+        return "Dark blue";
+    }
 }

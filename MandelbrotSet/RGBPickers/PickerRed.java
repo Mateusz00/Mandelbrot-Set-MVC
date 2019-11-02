@@ -11,4 +11,9 @@ public class PickerRed implements RGBPicker
 
         return Color.HSBtoRGB(((float) iterations / maxIterations), 1, 1);
     }
+
+    @Override
+    public String getDescription() {
+        return "Red";
+    }
 }

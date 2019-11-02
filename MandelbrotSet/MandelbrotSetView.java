@@ -129,4 +129,8 @@ public class MandelbrotSetView extends JPanel
             }
         });
     }
+
+    public RGBPicker getRGBPicker() {
+        return colorPicker;
+    }
 }
