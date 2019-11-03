@@ -7,14 +7,17 @@ import MandelbrotSet.RGBPickers.RGBPicker;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 
 public class Application
 {
@@ -96,6 +99,17 @@ public class Application
     }
 
     void createImageDialog() {
+        // Set up file chooser
+        ExtensionFilter PNGExtension = new ExtensionFilter("PNG (*.png)", "png");
+        ExtensionFilter JPGExtension = new ExtensionFilter("JPG (*.jpg)", "jpg");
+        PNGExtension.setEnforcedSaveExtension("png");
+        JPGExtension.setEnforcedSaveExtension("jpg");
+
+        final JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.addChoosableFileFilter(PNGExtension);
+        fileChooser.addChoosableFileFilter(JPGExtension);
+
         // Set up dialog
         JDialog dialog = new JDialog(mainWindow, "Generate image", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -182,7 +196,17 @@ public class Application
 
         JButton fileChooseButton = new JButton("Save as...");
         fileChooseButton.addActionListener((e) -> {
-            // TODO
+            int returnVal = fileChooser.showSaveDialog(fileChooseButton);
+
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
+                // Obtain filename and enforce chosen extension
+                String fileName = fileChooser.getSelectedFile().getName();
+                fileName = ((ExtensionFilter) fileChooser.getFileFilter()).enforceExtension(fileName);
+
+                // Construct path and update saveDestination
+                File file = new File(fileChooser.getSelectedFile().getParent(), fileName);
+                saveDestination.setText(file.getAbsolutePath());
+            }
         });
         panelFileChooser.add(fileChooseButton);
 
@@ -201,7 +225,15 @@ public class Application
 
         JButton generateButton = new JButton("Generate");
         generateButton.addActionListener((e) -> {
-            // TODO
+            // Save file destination have to be chosen
+            if(!saveDestination.getText().equals("")) {
+                File file = new File(saveDestination.getText());
+
+                // TODO: Generate image and save it
+            }
+            else
+                JOptionPane.showMessageDialog(dialog, "Error: Choose save file destination!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
         });
         lastPanel.add(generateButton);
 
@@ -220,6 +252,63 @@ public class Application
         Point topLeft = mainWindow.getLocationOnScreen();
 
         return new Point(centerTopLeftDistance.x + topLeft.x, centerTopLeftDistance.y + topLeft.y);
+    }
+
+    private class ExtensionFilter extends FileFilter
+    {
+        private ArrayList<String> allowedExtensions;
+        private String description;
+        private String enforcedSaveExtension;
+
+        public ExtensionFilter(String description, String... allowExtensions) {
+            this.description = description;
+            allowedExtensions = new ArrayList<>(allowExtensions.length);
+
+            for(String extension : allowExtensions)
+                allowedExtensions.add(extension);
+        }
+
+        public String getEnforcedSaveExtension() {
+            return enforcedSaveExtension;
+        }
+
+        public void setEnforcedSaveExtension(String enforcedSaveExtension) {
+            this.enforcedSaveExtension = enforcedSaveExtension;
+        }
+
+        public String enforceExtension(String fileName) {
+            // Get rid of invalid extensions and/or add correct one
+            int substrEnd = (fileName.indexOf('.') != -1) ? fileName.indexOf('.') : fileName.length();
+            fileName = fileName.substring(0, substrEnd) + "." + enforcedSaveExtension;
+
+            return fileName;
+        }
+
+        @Override
+        public boolean accept(File f) {
+            if(f.isDirectory())
+                return true;
+
+            // Get extension
+            String fileName = f.getName(), extension;
+            int extensionIndex = fileName.lastIndexOf('.');
+
+            if(extensionIndex != -1) {
+                extension = fileName.substring(extensionIndex + 1).toLowerCase();
+
+                for(String allowedExtension : allowedExtensions) {
+                    if(extension.equals(allowedExtension))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public String getDescription() {
+            return description;
+        }
     }
 
     private class RGBPickerComboBoxRenderer extends BasicComboBoxRenderer
