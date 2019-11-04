@@ -17,7 +17,7 @@ public class MandelbrotSetView extends JPanel
 {
     private MandelbrotSetControls controller;
     private MandelbrotSetModel model;
-    private BufferedImage mandelbrotImg;
+    final private BufferedImage mandelbrotImg;
     private List<Long> iterationsData;
     private long currentMaxIterations = 0;
     private Dimension currentSize;
@@ -27,11 +27,9 @@ public class MandelbrotSetView extends JPanel
         model = pModel;
         controller = pController;
         model.addObserver(new ModelObserver());
-
         currentSize = model.getSize();
         setPreferredSize(currentSize);
         mandelbrotImg = new BufferedImage(currentSize.width, currentSize.height, BufferedImage.TYPE_INT_RGB);
-
         addBindings();
     }
 
@@ -39,28 +37,23 @@ public class MandelbrotSetView extends JPanel
     {
         @Override
         public void update(Observable obs, Object obj) {
+            iterationsData = model.getIterationsData();
+            currentMaxIterations = model.getMaxIterations();
+
             updateView();
         }
     }
 
     public void setColoring(RGBPicker picker) {
         colorPicker = picker;
-
-        calculateColors();
-        repaint();
     }
 
     /**
      * Assigns RGB values to each pixel based on number of iterations for point representing that pixel
      */
-    private void updateView() {
-        iterationsData = model.getIterationsData();
-        currentMaxIterations = model.getMaxIterations();
-
-        SwingUtilities.invokeLater(() -> {
-            calculateColors();
-            repaint();
-        });
+    public void updateView() {
+        calculateColors();
+        repaint();
     }
 
     private void calculateColors() {
@@ -132,5 +125,9 @@ public class MandelbrotSetView extends JPanel
 
     public RGBPicker getRGBPicker() {
         return colorPicker;
+    }
+
+    public BufferedImage getBufferedImage() {
+        return mandelbrotImg;
     }
 }

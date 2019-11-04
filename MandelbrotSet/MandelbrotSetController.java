@@ -2,9 +2,9 @@ package MandelbrotSet;
 
 import MandelbrotSet.RGBPickers.RGBPicker;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MandelbrotSetController implements MandelbrotSetControls
@@ -124,7 +124,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
     }
 
     public void setEscapeRadius(long escapeRadius) {
-        setEscapeRadius(escapeRadius);
+        model.setEscapeRadius(escapeRadius);
     }
 
     /**
@@ -143,5 +143,17 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     public RGBPicker getCurrentRGBPicker() {
         return view.getRGBPicker();
+    }
+
+    public void setRGBPicker(RGBPicker rgb) {
+        view.setColoring(rgb);
+    }
+
+    public void generateNewSet() {
+        model.generate();
+    }
+
+    public BufferedImage getBufferedImage() {
+        return view.getBufferedImage();
     }
 }

@@ -294,6 +294,8 @@ public class MandelbrotSetModel extends Observable
 
     public void setCenter(Point2D.Double center) {
         this.center = center;
+
+        calculateRange();
     }
 
     public long getEscapeRadius() {
@@ -317,6 +319,9 @@ public class MandelbrotSetModel extends Observable
     public void setZoom(double[] zoom) {
         this.zoom[0] = zoom[0];
         this.zoom[1] = zoom[1];
+
+        calculateRange();
+        calculateStep();
     }
 
     private class ForkGenerate extends RecursiveAction

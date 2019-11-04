@@ -5,6 +5,7 @@ import MandelbrotSet.RGBPickers.PickerRed;
 import MandelbrotSet.RGBPickers.PickerRedDark;
 import MandelbrotSet.RGBPickers.RGBPicker;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.filechooser.FileFilter;
@@ -12,7 +13,10 @@ import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -83,17 +87,26 @@ public class Application
         menuBar.add(colors);
 
         JMenuItem red = new JMenuItem("Red", KeyEvent.VK_R);
-        red.addActionListener((e) -> view.setColoring(new PickerRed()));
+        red.addActionListener((e) -> {
+            view.setColoring(new PickerRed());
+            view.updateView();
+        });
         red.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
         colors.add(red);
 
         JMenuItem darkRed = new JMenuItem("Dark red", KeyEvent.VK_D);
-        darkRed.addActionListener((e) -> view.setColoring(new PickerRedDark()));
+        darkRed.addActionListener((e) -> {
+            view.setColoring(new PickerRedDark());
+            view.updateView();
+        });
         darkRed.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
         colors.add(darkRed);
 
         JMenuItem blue = new JMenuItem("Blue", KeyEvent.VK_B);
-        blue.addActionListener((e) -> view.setColoring(new PickerBlue()));
+        blue.addActionListener((e) -> {
+            view.setColoring(new PickerBlue());
+            view.updateView();
+        });
         blue.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, ActionEvent.CTRL_MASK));
         colors.add(blue);
     }
@@ -170,22 +183,22 @@ public class Application
         decimalFormat.setRoundingMode(RoundingMode.FLOOR);
 
         // Add formatted text fields
-        JFormattedTextField centerX = createFieldAndLabel(doubleFormat, panelCenter, "x:");
-        JFormattedTextField centerY = createFieldAndLabel(doubleFormat, panelCenter, "y:");
-        JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, panelZoom, "x:");
-        JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, panelZoom, "y:");
+        final JFormattedTextField centerX = createFieldAndLabel(doubleFormat, panelCenter, "x:");
+        final JFormattedTextField centerY = createFieldAndLabel(doubleFormat, panelCenter, "y:");
+        final JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, panelZoom, "x:");
+        final JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, panelZoom, "y:");
 
-        JFormattedTextField maxIterations = new JFormattedTextField(decimalFormat);
+        final JFormattedTextField maxIterations = new JFormattedTextField(decimalFormat);
         maxIterations.setColumns(24);
         panelIterations.add(maxIterations);
 
-        JFormattedTextField escapeRadius = new JFormattedTextField(decimalFormat);
+        final JFormattedTextField escapeRadius = new JFormattedTextField(decimalFormat);
         escapeRadius.setColumns(24);
         panelRadius.add(escapeRadius);
 
         // Choose color
         Object[] coloringAlgorithms = {new PickerRed(), new PickerRedDark(), new PickerBlue()};
-        JComboBox colors = new JComboBox(coloringAlgorithms);
+        final JComboBox colors = new JComboBox(coloringAlgorithms);
         colors.setRenderer(new RGBPickerComboBoxRenderer());
         panelRGBPicker.add(colors, BorderLayout.WEST);
 
@@ -227,9 +240,31 @@ public class Application
         generateButton.addActionListener((e) -> {
             // Save file destination have to be chosen
             if(!saveDestination.getText().equals("")) {
+                // Generate mandelbrot set
+                double centerXVal = ((Number) centerX.getValue()).doubleValue();
+                double centerYVal = ((Number) centerY.getValue()).doubleValue();
+                long escapeRadiusVal = ((Number) escapeRadius.getValue()).longValue();
+                long maxIterationsVal = ((Number) maxIterations.getValue()).longValue();
+                double zoomXVal = ((Number) zoomX.getValue()).doubleValue();
+                double zoomYVal = ((Number) zoomY.getValue()).doubleValue();
+
+                controller.setEscapeRadius(escapeRadiusVal);
+                controller.setCenter(new Point2D.Double(centerXVal, centerYVal));
+                controller.setMaxIterations(maxIterationsVal);
+                controller.setZoom(new double[]{zoomXVal, zoomYVal});
+                controller.setRGBPicker((RGBPicker) colors.getSelectedItem());
+                controller.generateNewSet();
+                BufferedImage img = controller.getBufferedImage();
+
+                // Write generated mandelbrot set to file
                 File file = new File(saveDestination.getText());
 
-                // TODO: Generate image and save it
+                try {
+                    ImageIO.write(img, ((ExtensionFilter) fileChooser.getFileFilter()).getEnforcedSaveExtension(), file);
+                }
+                catch(IOException exception) {
+                    exception.printStackTrace();
+                }
             }
             else
                 JOptionPane.showMessageDialog(dialog, "Error: Choose save file destination!",
