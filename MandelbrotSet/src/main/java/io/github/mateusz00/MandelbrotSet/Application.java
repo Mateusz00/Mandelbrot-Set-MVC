@@ -1,9 +1,6 @@
-package MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet;
 
-import MandelbrotSet.RGBPickers.PickerBlue;
-import MandelbrotSet.RGBPickers.PickerRed;
-import MandelbrotSet.RGBPickers.PickerRedDark;
-import MandelbrotSet.RGBPickers.RGBPicker;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -384,10 +381,3 @@ public class Application
         dialog.setVisible(true);
     }
 }
-
-/**
- * add setModel to view. Remove model from ctor of view. Add listeners in setModel
- * Controller sets view's model
- * Controller invokes view's onRemoval that deletes listeners from model's list
- *
- * **/

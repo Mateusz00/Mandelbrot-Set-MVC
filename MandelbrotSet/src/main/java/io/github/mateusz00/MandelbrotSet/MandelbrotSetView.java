@@ -1,7 +1,7 @@
-package MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet;
 
-import MandelbrotSet.RGBPickers.RGBPicker;
-import MandelbrotSet.RGBPickers.PickerRed;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.RGBPicker;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.PickerRed;
 
 import javax.swing.*;
 import java.awt.*;

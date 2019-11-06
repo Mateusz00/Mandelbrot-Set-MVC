@@ -1,4 +1,4 @@
-package MandelbrotSet.RGBPickers;
+package io.github.mateusz00.MandelbrotSet.RGBPickers;
 
 import java.awt.*;
 

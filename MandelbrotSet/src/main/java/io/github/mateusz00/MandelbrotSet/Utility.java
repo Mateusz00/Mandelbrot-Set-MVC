@@ -1,4 +1,4 @@
-package MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet;
 
 import java.awt.geom.Point2D;
 

@@ -1,6 +1,6 @@
-package MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet;
 
-import MandelbrotSet.RGBPickers.RGBPicker;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.RGBPicker;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
