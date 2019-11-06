@@ -384,3 +384,10 @@ public class Application
         dialog.setVisible(true);
     }
 }
+
+/**
+ * add setModel to view. Remove model from ctor of view. Add listeners in setModel
+ * Controller sets view's model
+ * Controller invokes view's onRemoval that deletes listeners from model's list
+ *
+ * **/
