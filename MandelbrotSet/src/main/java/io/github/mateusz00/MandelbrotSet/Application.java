@@ -25,7 +25,30 @@ public class Application
     private static final int WIDTH = 850;
     private static final int HEIGHT = 600;
     private final JFrame mainWindow = new JFrame("Mandelbrot Set");
+    private final JFileChooser imageFileChooser;
+    private final JFileChooser videoFileChooser;
     private MandelbrotSetController controller;
+
+    public Application() {
+        // Set up imageFileChooser
+        ExtensionFilter PNGExtension = new ExtensionFilter("PNG (*.png)", "png");
+        ExtensionFilter JPGExtension = new ExtensionFilter("JPG (*.jpg)", "jpg");
+        PNGExtension.setEnforcedSaveExtension("png");
+        JPGExtension.setEnforcedSaveExtension("jpg");
+
+        imageFileChooser = new JFileChooser();
+        imageFileChooser.setAcceptAllFileFilterUsed(false);
+        imageFileChooser.addChoosableFileFilter(PNGExtension);
+        imageFileChooser.addChoosableFileFilter(JPGExtension);
+
+        // Set up videoFileChooser
+        ExtensionFilter MP4Extension = new ExtensionFilter("MP4 (*.mp4)", "mp4");
+        MP4Extension.setEnforcedSaveExtension("mp4");
+
+        videoFileChooser = new JFileChooser();
+        videoFileChooser.setAcceptAllFileFilterUsed(false);
+        videoFileChooser.addChoosableFileFilter(MP4Extension);
+    }
 
     public static void main(String[] args) {
         Application app = new Application();
@@ -109,17 +132,6 @@ public class Application
     }
 
     void createImageDialog() {
-        // Set up file chooser
-        ExtensionFilter PNGExtension = new ExtensionFilter("PNG (*.png)", "png");
-        ExtensionFilter JPGExtension = new ExtensionFilter("JPG (*.jpg)", "jpg");
-        PNGExtension.setEnforcedSaveExtension("png");
-        JPGExtension.setEnforcedSaveExtension("jpg");
-
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setAcceptAllFileFilterUsed(false);
-        fileChooser.addChoosableFileFilter(PNGExtension);
-        fileChooser.addChoosableFileFilter(JPGExtension);
-
         // Set up dialog
         JDialog dialog = new JDialog(mainWindow, "Generate image", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -206,15 +218,15 @@ public class Application
 
         JButton fileChooseButton = new JButton("Save as...");
         fileChooseButton.addActionListener((e) -> {
-            int returnVal = fileChooser.showSaveDialog(fileChooseButton);
+            int returnVal = imageFileChooser.showSaveDialog(fileChooseButton);
 
             if(returnVal == JFileChooser.APPROVE_OPTION) {
                 // Obtain filename and enforce chosen extension
-                String fileName = fileChooser.getSelectedFile().getName();
-                fileName = ((ExtensionFilter) fileChooser.getFileFilter()).enforceExtension(fileName);
+                String fileName = imageFileChooser.getSelectedFile().getName();
+                fileName = ((ExtensionFilter) imageFileChooser.getFileFilter()).enforceExtension(fileName);
 
                 // Construct path and update saveDestination
-                File file = new File(fileChooser.getSelectedFile().getParent(), fileName);
+                File file = new File(imageFileChooser.getSelectedFile().getParent(), fileName);
                 saveDestination.setText(file.getAbsolutePath());
             }
         });
@@ -257,7 +269,7 @@ public class Application
                 File file = new File(saveDestination.getText());
 
                 try {
-                    ImageIO.write(img, ((ExtensionFilter) fileChooser.getFileFilter()).getEnforcedSaveExtension(), file);
+                    ImageIO.write(img, ((ExtensionFilter) imageFileChooser.getFileFilter()).getEnforcedSaveExtension(), file);
                 }
                 catch(IOException exception) {
                     exception.printStackTrace();
@@ -372,12 +384,137 @@ public class Application
     }
 
     void createVideoDialog () {
+        // Set up dialog
         JDialog dialog = new JDialog(mainWindow, "Generate video", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setResizable(false);
 
-        // TODO
+        // Create container
+        JPanel mainPanel = new JPanel();
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setLayout(new BorderLayout());
 
+        // Add panels to main panel
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.PAGE_AXIS));
+        mainPanel.add(formPanel, BorderLayout.CENTER);
+
+        JPanel lastPanel = new JPanel();
+        lastPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        mainPanel.add(lastPanel, BorderLayout.PAGE_END);
+
+        // Add panels to form panel
+        Border marginBorder = BorderFactory.createEmptyBorder(0, 0, 2, 0);
+
+        JPanel panelCenter = new JPanel();
+        panelCenter.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Center")));
+        JPanel panelZoom = new JPanel();
+        panelZoom.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Zoom")));
+        JPanel panelIterations = new JPanel();
+        panelIterations.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Max iterations")));
+        JPanel panelRadius = new JPanel();
+        panelRadius.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Escape radius")));
+        JPanel panelRGBPicker = new JPanel();
+        panelRGBPicker.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Coloring"),
+                        BorderFactory.createEmptyBorder(3, 3, 4, 3))));
+        panelRGBPicker.setLayout(new BorderLayout());
+        JPanel panelFileChooser = new JPanel();
+        panelFileChooser.setBorder(BorderFactory.createCompoundBorder(marginBorder,
+                BorderFactory.createTitledBorder("Choose destination")));
+        formPanel.add(panelCenter);
+        formPanel.add(panelZoom);
+        formPanel.add(panelIterations);
+        formPanel.add(panelRadius);
+        formPanel.add(panelRGBPicker);
+        formPanel.add(panelFileChooser);
+
+        // Create formats
+        NumberFormat doubleFormat = NumberFormat.getNumberInstance();
+        doubleFormat.setMinimumFractionDigits(1);
+        doubleFormat.setMaximumFractionDigits(Double.MAX_EXPONENT);
+
+        DecimalFormat decimalFormat = new DecimalFormat();
+        decimalFormat.setMaximumIntegerDigits(19);
+        decimalFormat.setMaximumFractionDigits(0);
+        decimalFormat.setRoundingMode(RoundingMode.FLOOR);
+
+        // Add formatted text fields
+        final JFormattedTextField centerX = createFieldAndLabel(doubleFormat, panelCenter, "x:");
+        final JFormattedTextField centerY = createFieldAndLabel(doubleFormat, panelCenter, "y:");
+        final JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, panelZoom, "x:");
+        final JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, panelZoom, "y:");
+
+        final JFormattedTextField maxIterations = new JFormattedTextField(decimalFormat);
+        maxIterations.setColumns(24);
+        panelIterations.add(maxIterations);
+
+        final JFormattedTextField escapeRadius = new JFormattedTextField(decimalFormat);
+        escapeRadius.setColumns(24);
+        panelRadius.add(escapeRadius);
+
+        // Choose color
+        Object[] coloringAlgorithms = {new PickerRed(), new PickerRedDark(), new PickerBlue()};
+        final JComboBox colors = new JComboBox(coloringAlgorithms);
+        colors.setRenderer(new RGBPickerComboBoxRenderer());
+        panelRGBPicker.add(colors, BorderLayout.WEST);
+
+        // File chooser
+        final JTextField saveDestination = new JTextField("", 16);
+        saveDestination.setEditable(false);
+        panelFileChooser.add(saveDestination);
+
+        JButton fileChooseButton = new JButton("Save as...");
+        fileChooseButton.addActionListener((e) -> {
+            int returnVal = videoFileChooser.showSaveDialog(fileChooseButton);
+
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
+                // Obtain filename and enforce chosen extension
+                String fileName = videoFileChooser.getSelectedFile().getName();
+                fileName = ((ExtensionFilter) videoFileChooser.getFileFilter()).enforceExtension(fileName);
+
+                // Construct path and update saveDestination
+                File file = new File(videoFileChooser.getSelectedFile().getParent(), fileName);
+                saveDestination.setText(file.getAbsolutePath());
+            }
+        });
+        panelFileChooser.add(fileChooseButton);
+
+        // Last panel components
+        JButton currentDataGetter = new JButton("Current data");
+        currentDataGetter.addActionListener((e) -> {
+            centerX.setValue(controller.getCenter().getX());
+            centerY.setValue(controller.getCenter().getY());
+            zoomX.setValue((controller.getZoom())[0]);
+            zoomY.setValue((controller.getZoom())[1]);
+            maxIterations.setValue(controller.getMaxIterations());
+            escapeRadius.setValue(controller.getEscapeRadius());
+            colors.getModel().setSelectedItem(controller.getCurrentRGBPicker());
+        });
+        lastPanel.add(currentDataGetter);
+
+        JButton generateButton = new JButton("Generate");
+        generateButton.addActionListener((e) -> {
+            // Save file destination have to be chosen
+            if(!saveDestination.getText().equals("")) {
+                // TODO
+            }
+            else
+                JOptionPane.showMessageDialog(dialog, "Error: Choose save file destination!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+        });
+        lastPanel.add(generateButton);
+
+        dialog.add(mainPanel);
         dialog.pack();
+
+        // Position dialog (Dialog's center should be at the same position as mainFrame's center)
+        Point center = getMainFrameCenterPosition();
+        dialog.setLocation(center.x - dialog.getWidth() / 2, center.y - dialog.getHeight() / 2);
         dialog.setVisible(true);
     }
 }
