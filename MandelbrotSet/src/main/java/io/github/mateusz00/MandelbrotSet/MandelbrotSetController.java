@@ -11,7 +11,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
 {
     private final int MOVE_PIXELS_X;
     private final int MOVE_PIXELS_Y;
-    private static final float ZOOM_PERCENT = 0.07f;
+    private double zoomPercent = 0.07;
     private MandelbrotSetModel model;
     private MandelbrotSetView view;
     private final ReentrantLock zoomLock = new ReentrantLock();
@@ -48,7 +48,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
         }
     }
 
-    private void tryZooming(float zoomPercent) {
+    private void tryZooming(double zoomPercent) {
         // Ensures that threads won't queue (makes app more responsive)
         if(!zoomLock.isLocked()) {
             new Thread(() -> {
@@ -95,12 +95,19 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     @Override
     public void zoomIn() {
-        tryZooming(ZOOM_PERCENT);
+        tryZooming(zoomPercent);
     }
 
     @Override
     public void zoomOut() {
-        tryZooming(-ZOOM_PERCENT);
+        tryZooming(-zoomPercent);
+    }
+
+    /**
+     * Zooms in without creating new thread
+     */
+    public void zoomInNoMultithreading() {
+        model.zoom(zoomPercent);
     }
 
     public void setMaxIterations(long maxIterations) {
@@ -155,5 +162,21 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     public BufferedImage getBufferedImage() {
         return view.getBufferedImage();
+    }
+
+    public double getZoomPercent() {
+        return zoomPercent;
+    }
+
+    public void setZoomPercent(double zoomPercent) {
+        this.zoomPercent = zoomPercent;
+    }
+
+    public double getMaxIterationsMultiplier() {
+        return model.getMaxIterationsMultiplier();
+    }
+
+    public void setMaxIterationsMultiplier(double maxIterationsMultiplier) {
+        model.setMaxIterationsMultiplier(maxIterationsMultiplier);
     }
 }

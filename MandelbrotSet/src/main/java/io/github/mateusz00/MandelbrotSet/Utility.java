@@ -15,4 +15,23 @@ public class Utility
         double length = vectorLength(vector);
         vector.setLocation(vector.getX() / length, vector.getY() / length);
     }
+
+    public static int digitsNumber(double value) {
+        int digits = (value >= 1) ? 1 : 0;
+
+        while((value /= 10) >= 1)
+            ++digits;
+
+        return digits;
+    }
+
+    /**
+     * @return String containing fileName without extensions (name.ext.ext.ext -> name)
+     */
+    public static String removeExtension(String fileName) {
+        int substrEnd = (fileName.indexOf('.') != -1) ? fileName.indexOf('.') : fileName.length();
+        fileName = fileName.substring(0, substrEnd);
+
+        return fileName;
+    }
 }

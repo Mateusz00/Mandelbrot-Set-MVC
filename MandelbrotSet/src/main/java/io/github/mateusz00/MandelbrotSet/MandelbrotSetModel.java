@@ -28,6 +28,7 @@ public class MandelbrotSetModel extends Observable
     private double yStep;
     private double xStep;
     private static int THRESHOLD_Y = 50;
+    private double maxIterationsMultiplier = 1;
     private ForkJoinPool pool = ForkJoinPool.commonPool();
     private Dimension size;
 
@@ -262,13 +263,14 @@ public class MandelbrotSetModel extends Observable
         } }
     }
 
-    public void zoom(float zoomChange) {
+    public void zoom(double zoomChange) {
         synchronized(rangeLock) { synchronized(zoom) { synchronized(stepLock) {
             zoom[0] *= (1 - zoomChange);
             zoom[1] *= (1 - zoomChange);
 
             zoomPercent += zoomChange;
-            maxIterations = (zoomPercent > 0) ? (long) (DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS;
+            long temp = (zoomPercent > 0) ? (long) (DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS;
+            maxIterations += Math.abs((temp - maxIterations)) * maxIterationsMultiplier;
 
             calculateRange();
             calculateStep();
@@ -281,21 +283,29 @@ public class MandelbrotSetModel extends Observable
     }
 
     public void setMaxIterations(long maxIterations) {
-        this.maxIterations = maxIterations;
+        synchronized(iterationsLock) {
+            this.maxIterations = maxIterations;
+        }
     }
 
     public long getMaxIterations() {
-        return maxIterations;
+        synchronized(iterationsLock) {
+            return maxIterations;
+        }
     }
 
     public Point2D.Double getCenter() {
-        return center;
+        synchronized(rangeLock) {
+            return center;
+        }
     }
 
     public void setCenter(Point2D.Double center) {
-        this.center = center;
+        synchronized(rangeLock) {
+            this.center = center;
 
-        calculateRange();
+            calculateRange();
+        }
     }
 
     public long getEscapeRadius() {
@@ -303,25 +313,43 @@ public class MandelbrotSetModel extends Observable
     }
 
     public void setEscapeRadius(long escapeRadius) {
-        this.escapeRadius = escapeRadius;
+        synchronized(iterationsLock) {
+            this.escapeRadius = escapeRadius;
+        }
+    }
+
+    public double getMaxIterationsMultiplier() {
+        synchronized(iterationsLock) {
+            return maxIterationsMultiplier;
+        }
+    }
+
+    public void setMaxIterationsMultiplier(double maxIterationsMultiplier) {
+        synchronized(iterationsLock) {
+            this.maxIterationsMultiplier = maxIterationsMultiplier;
+        }
     }
 
     /**
      * @return model's zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
      */
     public double[] getZoom() {
-        return zoom;
+        synchronized(zoom) {
+            return zoom;
+        }
     }
 
     /**
      * @param zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
      */
     public void setZoom(double[] zoom) {
-        this.zoom[0] = zoom[0];
-        this.zoom[1] = zoom[1];
+        synchronized(zoom) {
+            this.zoom[0] = zoom[0];
+            this.zoom[1] = zoom[1];
 
-        calculateRange();
-        calculateStep();
+            calculateRange();
+            calculateStep();
+        }
     }
 
     private class ForkGenerate extends RecursiveAction

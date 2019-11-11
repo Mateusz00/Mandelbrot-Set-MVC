@@ -1,6 +1,11 @@
 package io.github.mateusz00.MandelbrotSet;
 
 import io.github.mateusz00.MandelbrotSet.RGBPickers.*;
+import net.bramp.ffmpeg.FFmpeg;
+import net.bramp.ffmpeg.FFmpegExecutor;
+import net.bramp.ffmpeg.FFprobe;
+import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import org.apache.commons.io.FileUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -42,12 +47,12 @@ public class Application
         imageFileChooser.addChoosableFileFilter(JPGExtension);
 
         // Set up videoFileChooser
-        ExtensionFilter MP4Extension = new ExtensionFilter("MP4 (*.mp4)", "mp4");
-        MP4Extension.setEnforcedSaveExtension("mp4");
+        ExtensionFilter WEBMExtension = new ExtensionFilter("WEBM (*.webm)", "webm");
+        WEBMExtension.setEnforcedSaveExtension("webm");
 
         videoFileChooser = new JFileChooser();
         videoFileChooser.setAcceptAllFileFilterUsed(false);
-        videoFileChooser.addChoosableFileFilter(MP4Extension);
+        videoFileChooser.addChoosableFileFilter(WEBMExtension);
     }
 
     public static void main(String[] args) {
@@ -132,6 +137,10 @@ public class Application
     }
 
     void createImageDialog() {
+        // Constants
+        final String CENTER = BorderLayout.CENTER;
+        final String WEST = BorderLayout.WEST;
+
         // Set up dialog
         JDialog dialog = new JDialog(mainWindow, "Generate image", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -153,27 +162,27 @@ public class Application
 
         // Add panels to form panel
         Border marginBorder = BorderFactory.createEmptyBorder(0, 0, 2, 0);
+        Border paddingBorder = BorderFactory.createEmptyBorder(5, 5, 5, 5);
 
-        JPanel panelCenter = new JPanel();
-        panelCenter.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Center")));
-        JPanel panelZoom = new JPanel();
-        panelZoom.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Zoom")));
-        JPanel panelIterations = new JPanel();
-        panelIterations.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Max iterations")));
-        JPanel panelRadius = new JPanel();
-        panelRadius.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Escape radius")));
+        JPanel panelCenter = new JPanel(new GridLayout(1, 2, 5, 5));
+        panelCenter.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Center"), paddingBorder)));
+        JPanel panelZoom = new JPanel(new GridLayout(1, 2, 5, 5));
+        panelZoom.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Zoom"), paddingBorder)));
+        JPanel panelIterations = new JPanel(new BorderLayout(5, 5));
+        panelIterations.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Max iterations"), paddingBorder)));
+        JPanel panelRadius = new JPanel(new BorderLayout(5, 5));
+        panelRadius.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Escape radius"), paddingBorder)));
         JPanel panelRGBPicker = new JPanel();
-        panelRGBPicker.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Coloring"),
-                        BorderFactory.createEmptyBorder(3, 3, 4, 3))));
+        panelRGBPicker.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Coloring"), paddingBorder)));
         panelRGBPicker.setLayout(new BorderLayout());
-        JPanel panelFileChooser = new JPanel();
-        panelFileChooser.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Choose destination")));
+        JPanel panelFileChooser = new JPanel(new BorderLayout(5, 5));
+        panelFileChooser.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Choose destination"), paddingBorder)));
         formPanel.add(panelCenter);
         formPanel.add(panelZoom);
         formPanel.add(panelIterations);
@@ -191,11 +200,21 @@ public class Application
         decimalFormat.setMaximumFractionDigits(0);
         decimalFormat.setRoundingMode(RoundingMode.FLOOR);
 
-        // Add formatted text fields
-        final JFormattedTextField centerX = createFieldAndLabel(doubleFormat, panelCenter, "x:");
-        final JFormattedTextField centerY = createFieldAndLabel(doubleFormat, panelCenter, "y:");
-        final JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, panelZoom, "x:");
-        final JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, panelZoom, "y:");
+        // Center panel
+        JPanel subPanelCenter1 = new JPanel(new BorderLayout(5, 5));
+        JPanel subPanelCenter2 = new JPanel(new BorderLayout(5, 5));
+        final JFormattedTextField centerX = createFieldAndLabel(doubleFormat, subPanelCenter1, "x:", WEST, CENTER);
+        final JFormattedTextField centerY = createFieldAndLabel(doubleFormat, subPanelCenter2, "y:", WEST, CENTER);
+        panelCenter.add(subPanelCenter1);
+        panelCenter.add(subPanelCenter2);
+
+        // Zoom panel
+        JPanel subPanelZoom1 = new JPanel(new BorderLayout(5, 5));
+        JPanel subPanelZoom2 = new JPanel(new BorderLayout(5, 5));
+        final JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, subPanelZoom1, "x:", WEST, CENTER);
+        final JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, subPanelZoom2, "y:", WEST, CENTER);
+        panelZoom.add(subPanelZoom1);
+        panelZoom.add(subPanelZoom2);
 
         final JFormattedTextField maxIterations = new JFormattedTextField(decimalFormat);
         maxIterations.setColumns(24);
@@ -214,7 +233,7 @@ public class Application
         // File chooser
         final JTextField saveDestination = new JTextField("", 16);
         saveDestination.setEditable(false);
-        panelFileChooser.add(saveDestination);
+        panelFileChooser.add(saveDestination, BorderLayout.CENTER);
 
         JButton fileChooseButton = new JButton("Save as...");
         fileChooseButton.addActionListener((e) -> {
@@ -230,7 +249,7 @@ public class Application
                 saveDestination.setText(file.getAbsolutePath());
             }
         });
-        panelFileChooser.add(fileChooseButton);
+        panelFileChooser.add(fileChooseButton, BorderLayout.EAST);
 
         // Last panel components
         JButton currentDataGetter = new JButton("Current data");
@@ -269,7 +288,8 @@ public class Application
                 File file = new File(saveDestination.getText());
 
                 try {
-                    ImageIO.write(img, ((ExtensionFilter) imageFileChooser.getFileFilter()).getEnforcedSaveExtension(), file);
+                    String extension = ((ExtensionFilter) imageFileChooser.getFileFilter()).getEnforcedSaveExtension();
+                    ImageIO.write(img, extension, file);
                 }
                 catch(IOException exception) {
                     exception.printStackTrace();
@@ -322,8 +342,7 @@ public class Application
 
         public String enforceExtension(String fileName) {
             // Get rid of invalid extensions and/or add correct one
-            int substrEnd = (fileName.indexOf('.') != -1) ? fileName.indexOf('.') : fileName.length();
-            fileName = fileName.substring(0, substrEnd) + "." + enforcedSaveExtension;
+            fileName = Utility.removeExtension(fileName) + "." + enforcedSaveExtension;
 
             return fileName;
         }
@@ -369,21 +388,35 @@ public class Application
 
     /**
      * Creates FormattedTextField and label and adds them to specified panel
+     * @return Created JFormattedTextField
      */
     private JFormattedTextField createFieldAndLabel(Format format, JPanel panel, String label) {
+        return createFieldAndLabel(format, panel, label, null, null);
+    }
+
+    /**
+     * Creates FormattedTextField and label and adds them to specified panel
+     * @return Created JFormattedTextField
+     */
+    private JFormattedTextField createFieldAndLabel(Format format, JPanel panel, String label, Object labelConstraints,
+                                                    Object fieldConstraints) {
         JFormattedTextField field = new JFormattedTextField(format);
         field.setColumns(10);
         field.setValue(0);
 
         JLabel centerXLabel = new JLabel(label);
         centerXLabel.setLabelFor(field);
-        panel.add(centerXLabel);
-        panel.add(field);
+        panel.add(centerXLabel, labelConstraints);
+        panel.add(field, fieldConstraints);
 
         return field;
     }
 
-    void createVideoDialog () {
+    void createVideoDialog() {
+        // Constants
+        final String CENTER = BorderLayout.CENTER;
+        final String WEST = BorderLayout.WEST;
+
         // Set up dialog
         JDialog dialog = new JDialog(mainWindow, "Generate video", true);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -405,33 +438,38 @@ public class Application
 
         // Add panels to form panel
         Border marginBorder = BorderFactory.createEmptyBorder(0, 0, 2, 0);
+        Border paddingBorder = BorderFactory.createEmptyBorder(5, 5, 5, 5);
 
-        JPanel panelCenter = new JPanel();
-        panelCenter.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Center")));
-        JPanel panelZoom = new JPanel();
-        panelZoom.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Zoom")));
-        JPanel panelIterations = new JPanel();
-        panelIterations.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Max iterations")));
-        JPanel panelRadius = new JPanel();
-        panelRadius.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Escape radius")));
+        JPanel panelCenter = new JPanel(new GridLayout(1, 2, 5, 5));
+        panelCenter.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Center"), paddingBorder)));
+        JPanel panelZoom = new JPanel(new GridLayout(1, 2, 5, 5));
+        panelZoom.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Zoom"), paddingBorder)));
+        JPanel panelIterations = new JPanel(new BorderLayout(5, 5));
+        panelIterations.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Max iterations"), paddingBorder)));
+        JPanel panelRadius = new JPanel(new BorderLayout(5, 5));
+        panelRadius.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Escape radius"), paddingBorder)));
         JPanel panelRGBPicker = new JPanel();
-        panelRGBPicker.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Coloring"),
-                        BorderFactory.createEmptyBorder(3, 3, 4, 3))));
+        panelRGBPicker.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Coloring"), paddingBorder)));
         panelRGBPicker.setLayout(new BorderLayout());
-        JPanel panelFileChooser = new JPanel();
-        panelFileChooser.setBorder(BorderFactory.createCompoundBorder(marginBorder,
-                BorderFactory.createTitledBorder("Choose destination")));
+        JPanel panelFileChooser = new JPanel(new BorderLayout(5, 5));
+        panelFileChooser.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Choose destination"), paddingBorder)));
+        JPanel panelVideoSettings = new JPanel();
+        panelVideoSettings.setBorder(BorderFactory.createCompoundBorder(marginBorder, BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Video settings"), paddingBorder)));
+        panelVideoSettings.setLayout(new BoxLayout(panelVideoSettings, BoxLayout.PAGE_AXIS));
         formPanel.add(panelCenter);
         formPanel.add(panelZoom);
         formPanel.add(panelIterations);
         formPanel.add(panelRadius);
         formPanel.add(panelRGBPicker);
         formPanel.add(panelFileChooser);
+        formPanel.add(panelVideoSettings);
 
         // Create formats
         NumberFormat doubleFormat = NumberFormat.getNumberInstance();
@@ -443,11 +481,21 @@ public class Application
         decimalFormat.setMaximumFractionDigits(0);
         decimalFormat.setRoundingMode(RoundingMode.FLOOR);
 
-        // Add formatted text fields
-        final JFormattedTextField centerX = createFieldAndLabel(doubleFormat, panelCenter, "x:");
-        final JFormattedTextField centerY = createFieldAndLabel(doubleFormat, panelCenter, "y:");
-        final JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, panelZoom, "x:");
-        final JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, panelZoom, "y:");
+        // Center panel
+        JPanel subPanelCenter1 = new JPanel(new BorderLayout(5, 5));
+        JPanel subPanelCenter2 = new JPanel(new BorderLayout(5, 5));
+        final JFormattedTextField centerX = createFieldAndLabel(doubleFormat, subPanelCenter1, "x:", WEST, CENTER);
+        final JFormattedTextField centerY = createFieldAndLabel(doubleFormat, subPanelCenter2, "y:", WEST, CENTER);
+        panelCenter.add(subPanelCenter1);
+        panelCenter.add(subPanelCenter2);
+
+        // Zoom panel
+        JPanel subPanelZoom1 = new JPanel(new BorderLayout(5, 5));
+        JPanel subPanelZoom2 = new JPanel(new BorderLayout(5, 5));
+        final JFormattedTextField zoomX = createFieldAndLabel(doubleFormat, subPanelZoom1, "x:", WEST, CENTER);
+        final JFormattedTextField zoomY = createFieldAndLabel(doubleFormat, subPanelZoom2, "y:", WEST, CENTER);
+        panelZoom.add(subPanelZoom1);
+        panelZoom.add(subPanelZoom2);
 
         final JFormattedTextField maxIterations = new JFormattedTextField(decimalFormat);
         maxIterations.setColumns(24);
@@ -464,9 +512,9 @@ public class Application
         panelRGBPicker.add(colors, BorderLayout.WEST);
 
         // File chooser
-        final JTextField saveDestination = new JTextField("", 16);
+        final JTextField saveDestination = new JTextField("");
         saveDestination.setEditable(false);
-        panelFileChooser.add(saveDestination);
+        panelFileChooser.add(saveDestination, BorderLayout.CENTER);
 
         JButton fileChooseButton = new JButton("Save as...");
         fileChooseButton.addActionListener((e) -> {
@@ -482,7 +530,41 @@ public class Application
                 saveDestination.setText(file.getAbsolutePath());
             }
         });
-        panelFileChooser.add(fileChooseButton);
+        panelFileChooser.add(fileChooseButton, BorderLayout.EAST);
+
+        // Video settings panel
+        JPanel videoSubPanel1 = new JPanel(new GridLayout(0, 2, 15, 2));
+
+        final JFormattedTextField frames = createFieldAndLabel(decimalFormat, videoSubPanel1, "Frames:");
+        final JFormattedTextField zoomPercent = createFieldAndLabel(doubleFormat, videoSubPanel1, "Zoom(%):");
+        zoomPercent.setToolTipText("Sets how much % will it zoom in/out with every frame (Negative for zooming out)");
+        final JFormattedTextField maxIterationsMultiplier = createFieldAndLabel(doubleFormat, videoSubPanel1,
+                "Max iterations multiplier:");
+        maxIterationsMultiplier.setToolTipText("Affects both coloring and computation speed (Higher = slower)");
+
+        panelVideoSettings.add(videoSubPanel1);
+        panelVideoSettings.add(videoSubPanel1);
+
+        JPanel videoSubPanel3 = new JPanel();
+        final JCheckBox keepImages = new JCheckBox("Keep images");
+        keepImages.setToolTipText("Keep generated images(every frame is saved as an image first before creating video)");
+
+        final JCheckBox generateVideo = new JCheckBox("Generate video");
+        generateVideo.setToolTipText("Uncheck it if you want to create video from images with settings and " +
+                "codec different than default");
+        generateVideo.addItemListener(((e) -> {
+            if(((JCheckBox) e.getSource()).isSelected())
+                keepImages.setEnabled(true);
+            else {
+                keepImages.setEnabled(false);
+                keepImages.setSelected(true);
+            }
+        }));
+        generateVideo.setSelected(true);
+
+        videoSubPanel3.add(generateVideo);
+        videoSubPanel3.add(keepImages);
+        panelVideoSettings.add(videoSubPanel3);
 
         // Last panel components
         JButton currentDataGetter = new JButton("Current data");
@@ -494,6 +576,8 @@ public class Application
             maxIterations.setValue(controller.getMaxIterations());
             escapeRadius.setValue(controller.getEscapeRadius());
             colors.getModel().setSelectedItem(controller.getCurrentRGBPicker());
+            zoomPercent.setValue(controller.getZoomPercent());
+            maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
         });
         lastPanel.add(currentDataGetter);
 
@@ -501,7 +585,96 @@ public class Application
         generateButton.addActionListener((e) -> {
             // Save file destination have to be chosen
             if(!saveDestination.getText().equals("")) {
-                // TODO
+                // Get data from components and update model, view and controller
+                long framesVal = ((Number) frames.getValue()).longValue();
+                if(framesVal <= 0)
+                    return;
+
+                double centerXVal = ((Number) centerX.getValue()).doubleValue();
+                double centerYVal = ((Number) centerY.getValue()).doubleValue();
+                long escapeRadiusVal = ((Number) escapeRadius.getValue()).longValue();
+                long maxIterationsVal = ((Number) maxIterations.getValue()).longValue();
+                double zoomXVal = ((Number) zoomX.getValue()).doubleValue();
+                double zoomYVal = ((Number) zoomY.getValue()).doubleValue();
+                double zoomPercentVal = ((Number) zoomPercent.getValue()).doubleValue();
+                double maxIterationsMultiplierVal = ((Number) maxIterationsMultiplier.getValue()).doubleValue();
+                int digits = Utility.digitsNumber(framesVal);
+
+                double zoomPercentOld = controller.getZoomPercent();
+                double maxIterationsMultiplierOld = controller.getMaxIterationsMultiplier();
+
+                controller.setEscapeRadius(escapeRadiusVal);
+                controller.setCenter(new Point2D.Double(centerXVal, centerYVal));
+                controller.setMaxIterations(maxIterationsVal);
+                controller.setZoom(new double[]{zoomXVal, zoomYVal});
+                controller.setRGBPicker((RGBPicker) colors.getSelectedItem());
+                controller.setZoomPercent(zoomPercentVal);
+                controller.setMaxIterationsMultiplier(maxIterationsMultiplierVal);
+
+                // First create directory and generate all frames and save them as individual images
+                File destination = new File(saveDestination.getText());
+                File framesDir = new File(Utility.removeExtension(destination.getAbsolutePath()) + "_frames");
+                framesDir.mkdirs();
+
+                for(long i = 0; i < framesVal; ++i) {
+                    // Generate mandelbrot set
+                    controller.generateNewSet();
+                    BufferedImage img = controller.getBufferedImage();
+
+                    // Write generated mandelbrot set to file
+                    String fileNumber = String.format("%0" + digits + "d", i);
+                    File file = new File(framesDir + "/frame" + fileNumber + ".png");
+
+                    try {
+                        ImageIO.write(img, "png", file);
+                    }
+                    catch(IOException exception) {
+                        exception.printStackTrace();
+                    }
+
+                    controller.zoomInNoMultithreading();
+                }
+
+                // Use ffmpeg (if there is one and user has selected generate video)
+                if(generateVideo.isSelected()) {
+                    try {
+                        FFmpeg ffmpeg = new FFmpeg("ffmpeg/ffmpeg");
+                        FFprobe ffprobe = new FFprobe("ffmpeg/ffprobe");
+
+                        FFmpegBuilder builder = new FFmpegBuilder()
+                                .setInput(framesDir + "/frame%0" + digits + "d.png")
+                                .overrideOutputFiles(true)
+                                .addOutput(saveDestination.getText())
+                                    .setFormat("webm")
+                                    .setVideoCodec("libvpx")
+                                    .setVideoFrameRate(FFmpeg.FPS_24)
+                                    .addExtraArgs("-fpre", "ffmpeg/libvpx.ffpreset")
+                                    .addExtraArgs("-quality", "best")
+                                    .done();
+
+                        FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
+                        executor.createJob(builder).run();
+                    }
+                    catch(IOException ee) {
+                        ee.printStackTrace();
+                        JOptionPane.showMessageDialog(dialog, "Error: Couldn't find ffmpeg/ffprobe" +
+                                        " in ffmpeg directory", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+
+                // Delete images if user didn't check keep images checkbox
+                if(!keepImages.isSelected()) {
+                    try {
+                        FileUtils.deleteDirectory(framesDir);
+                    }
+                    catch(IOException ee) {
+                        ee.printStackTrace();
+                    }
+                }
+
+                // Set old values that were overwritten by video settings
+                controller.setZoomPercent(zoomPercentOld);
+                controller.setMaxIterationsMultiplier(maxIterationsMultiplierOld);
             }
             else
                 JOptionPane.showMessageDialog(dialog, "Error: Choose save file destination!",
