@@ -6,6 +6,7 @@ import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.FFmpegExecutor;
 import net.bramp.ffmpeg.FFprobe;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import net.bramp.ffmpeg.probe.FFmpegProbeResult;
 import org.apache.commons.io.FileUtils;
 
 import javax.imageio.ImageIO;
@@ -182,62 +183,12 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
                 File framesDir = new File(Utility.removeExtension(destination.getAbsolutePath()) + "_frames");
                 framesDir.mkdirs();
 
-                // Generate all frames and save them as individual images
-                for(long i = 0; i < framesVal; ++i) {
-                    // Generate mandelbrot set
-                    controller.generateNewSet();
-                    BufferedImage img = controller.getBufferedImage();
-
-                    // Write generated mandelbrot set to file
-                    String fileNumber = String.format("%0" + digits + "d", i);
-                    File file = new File(framesDir + "/frame" + fileNumber + ".png");
-
-                    try {
-                        ImageIO.write(img, "png", file);
-                    }
-                    catch(IOException exception) {
-                        exception.printStackTrace();
-                    }
-
-                    controller.zoomInNoMultithreading();
-                }
-
-                // Use ffmpeg (if there is one and user has selected generate video)
-                if(generateVideo.isSelected()) {
-                    try {
-                        FFmpeg ffmpeg = new FFmpeg("ffmpeg/ffmpeg");
-                        FFprobe ffprobe = new FFprobe("ffmpeg/ffprobe");
-
-                        FFmpegBuilder builder = new FFmpegBuilder()
-                                .setInput(framesDir + "/frame%0" + digits + "d.png")
-                                .overrideOutputFiles(true)
-                                .addOutput(saveDestination.getText())
-                                .setFormat("webm")
-                                .setVideoCodec("libvpx")
-                                .setVideoFrameRate(FFmpeg.FPS_24)
-                                .addExtraArgs("-fpre", "ffmpeg/libvpx.ffpreset")
-                                .addExtraArgs("-quality", "best")
-                                .done();
-
-                        FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
-                        executor.createJob(builder).run();
-                    }
-                    catch(IOException ee) {
-                        ee.printStackTrace();
-                        JOptionPane.showMessageDialog(this, "Error: Couldn't find ffmpeg/ffprobe" +
-                                " in ffmpeg directory", "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-
-                // Delete images if user didn't check keep images checkbox
-                if(!keepImages.isSelected()) {
-                    try {
-                        FileUtils.deleteDirectory(framesDir);
-                    }
-                    catch(IOException ee) {
-                        ee.printStackTrace();
-                    }
-                }
+                // Generate all frames and save them as individual images then use them to create video if user checked
+                // appropriate checkbox and have ffmpeg
+                ProgressDialog progressDialog = new ProgressDialog(this);
+                progressDialog.executeTask(new FrameGenerator(framesVal, digits, framesDir, progressDialog),
+                        "Generate frames...");
+                progressDialog.setVisible(true);
 
                 // Set some old values that were overwritten by video settings
                 controller.setZoomPercent(zoomPercentOld);
@@ -251,4 +202,139 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
 
         return lastPanel;
     }
+
+    private class FrameGenerator extends SwingWorker<Void, Void> {
+        private final long framesVal;
+        private final int digits;
+        private final File framesDir;
+        private final ProgressDialog dialog;
+
+        public FrameGenerator(long framesVal, int digits, File framesDir, ProgressDialog dialog) {
+            this.framesVal = framesVal;
+            this.digits = digits;
+            this.framesDir = framesDir;
+            this.dialog = dialog;
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            if(framesVal > 0) {
+                // Generate mandelbrot set
+                controller.generateNewSet();
+                saveFrame(0);
+                setProgress((int) ((1 * 100) / framesVal));
+
+                // Generate all frames and save them as individual images
+                for(long i = 1; i < framesVal && !isCancelled(); ++i) {
+                    setProgress((int) ((i * 100) / framesVal));
+                    controller.zoomInNoMultithreading();
+                    saveFrame(i);
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            if(isCancelled())
+                return;
+
+            // Use ffmpeg (if there is one and user has selected generate video)
+            if(generateVideo.isSelected()) {
+                dialog.executeTask(new EncoderTask(framesDir, dialog, digits, framesVal), "Creating video...");
+            }
+            else {
+                dialog.dispose();
+                JOptionPane.showMessageDialog(VideoGenerateDialog.this, "Finished generating frames",
+                        "Task completed", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+
+        private void saveFrame(long frameNumber) {
+            BufferedImage img = controller.getBufferedImage();
+
+            // Write generated mandelbrot set to file
+            String fileNumber = String.format("%0" + digits + "d", frameNumber);
+            File file = new File(framesDir + "/frame" + fileNumber + ".png");
+
+            try {
+                ImageIO.write(img, "png", file);
+            }
+            catch(IOException exception) {
+                exception.printStackTrace();
+            }
+        }
+    }
+
+    private class EncoderTask extends SwingWorker<Void, Void> {
+        private final File framesDir;
+        private final ProgressDialog dialog;
+        private final int digits;
+        private final long frames;
+
+        public EncoderTask(File framesDir, ProgressDialog dialog, int digits, long frames) {
+            this.framesDir = framesDir;
+            this.dialog = dialog;
+            this.digits = digits;
+            this.frames = frames;
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            try {
+                FFmpeg ffmpeg = new FFmpeg("ffmpeg/ffmpeg");
+                FFprobe ffprobe = new FFprobe("ffmpeg/ffprobe");
+
+                FFmpegProbeResult input = ffprobe.probe(framesDir + "/frame%0" + digits + "d.png");
+
+                FFmpegBuilder builder = new FFmpegBuilder()
+                        .setInput(input)
+                        .overrideOutputFiles(true)
+                        .addOutput(saveDestination.getText())
+                            .setFormat("webm")
+                            .setVideoCodec("libvpx")
+                            .setVideoFrameRate(FFmpeg.FPS_24)
+                            .addExtraArgs("-fpre", "ffmpeg/libvpx.ffpreset")
+                            .addExtraArgs("-quality", "best")
+                            .done();
+
+                FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
+                executor.createJob(builder, (progress) -> {
+                    int percentage = (int) ((progress.frame * 100) / frames);
+                    setProgress(percentage);
+                }).run();
+
+                // Delete images if user didn't check keep images checkbox
+                if(!keepImages.isSelected()) {
+                    try {
+                        FileUtils.deleteDirectory(framesDir);
+                    }
+                    catch(IOException ee) {
+                        ee.printStackTrace();
+                    }
+                }
+            }
+            catch(IOException ee) {
+                ee.printStackTrace();
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(dialog, "Error: Couldn't find ffmpeg/ffprobe " +
+                            "in ffmpeg directory", "Error", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            if(isCancelled())
+                return;
+
+            dialog.dispose();
+            JOptionPane.showMessageDialog(VideoGenerateDialog.this, "Finished creating video",
+                    "Task completed", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
 }
+
