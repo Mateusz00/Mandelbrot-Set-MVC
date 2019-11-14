@@ -187,7 +187,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
                 // appropriate checkbox and have ffmpeg
                 ProgressDialog progressDialog = new ProgressDialog(this);
                 progressDialog.executeTask(new FrameGenerator(framesVal, digits, framesDir, progressDialog),
-                        "Generate frames...");
+                        "Generating frames...");
                 progressDialog.setVisible(true);
 
                 // Set some old values that were overwritten by video settings

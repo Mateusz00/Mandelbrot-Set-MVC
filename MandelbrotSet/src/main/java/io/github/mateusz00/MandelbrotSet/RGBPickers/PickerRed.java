@@ -1,15 +1,21 @@
 package io.github.mateusz00.MandelbrotSet.RGBPickers;
 
+import io.github.mateusz00.MandelbrotSet.MandelbrotSetResult;
+
 import java.awt.*;
 
 public class PickerRed implements RGBPicker
 {
     @Override
-    public int iterationsToRGB(long iterations, long maxIterations) {
-        if(iterations == maxIterations)
+    public int iterationsToRGB(MandelbrotSetResult result, long maxIterations, boolean colorSmoothing) {
+        if(result.getIterations() == maxIterations)
             return Color.BLACK.getRGB();
 
-        return Color.HSBtoRGB(((float) iterations / maxIterations), 1, 1);
+        double value = result.getIterations();
+        if(colorSmoothing)
+            value = (result.getIterations() + 1 - Math.log(Math.log(result.getEscapeValue())) / Math.log(2));
+
+        return Color.HSBtoRGB((float) (value / maxIterations), 1, 1);
     }
 
     @Override

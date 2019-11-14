@@ -18,10 +18,11 @@ public class MandelbrotSetView extends JPanel
     private MandelbrotSetControls controller;
     private MandelbrotSetModel model;
     final private BufferedImage mandelbrotImg;
-    private List<Long> iterationsData;
+    private List<MandelbrotSetResult> results;
     private long currentMaxIterations = 0;
     private Dimension currentSize;
     private RGBPicker colorPicker = new PickerRed();
+    private boolean isColorSmoothingEnabled = true;
 
     public MandelbrotSetView(MandelbrotSetModel pModel, MandelbrotSetControls pController) {
         model = pModel;
@@ -37,7 +38,7 @@ public class MandelbrotSetView extends JPanel
     {
         @Override
         public void update(Observable obs, Object obj) {
-            iterationsData = model.getIterationsData();
+            results = model.getResults();
             currentMaxIterations = model.getMaxIterations();
 
             updateView();
@@ -57,8 +58,8 @@ public class MandelbrotSetView extends JPanel
     }
 
     private void calculateColors() {
-        for(int i = 0; i < iterationsData.size(); ++i) {
-            int color = colorPicker.iterationsToRGB(iterationsData.get(i), currentMaxIterations);
+        for(int i = 0; i < results.size(); ++i) {
+            int color = colorPicker.iterationsToRGB(results.get(i), currentMaxIterations, isColorSmoothingEnabled);
             mandelbrotImg.setRGB(i % currentSize.width, i / currentSize.width, color);
         }
     }
@@ -129,5 +130,13 @@ public class MandelbrotSetView extends JPanel
 
     public BufferedImage getBufferedImage() {
         return mandelbrotImg;
+    }
+
+    public boolean isColorSmoothingEnabled() {
+        return isColorSmoothingEnabled;
+    }
+
+    public void setColorSmoothingEnabled(boolean colorSmoothingEnabled) {
+        isColorSmoothingEnabled = colorSmoothingEnabled;
     }
 }
