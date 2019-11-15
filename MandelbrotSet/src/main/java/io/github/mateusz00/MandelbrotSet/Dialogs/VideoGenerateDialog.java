@@ -104,9 +104,10 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
 
         frames = createFieldAndLabel(decimalFormat, videoSubPanel1, "Frames:");
         zoomPercent = createFieldAndLabel(doubleFormat, videoSubPanel1, "Zoom:");
-        zoomPercent.setToolTipText("Sets how much % will it zoom in/out with every frame (Negative for zooming out)");
+        zoomPercent.setToolTipText("Sets how much will it zoom in/out with every frame (Negative for zooming out)");
         maxIterationsMultiplier = createFieldAndLabel(doubleFormat, videoSubPanel1, "Max iterations multiplier:");
-        maxIterationsMultiplier.setToolTipText("Affects both coloring and computation speed (Higher = slower)");
+        maxIterationsMultiplier.setToolTipText("Sets how fast will max iterations increase while zooming in. " +
+                "Affects both coloring and computation speed (Higher = slower)");
 
         panelVideoSettings.add(videoSubPanel1);
 
@@ -149,6 +150,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
             setMaxIterationsValue(controller.getMaxIterations());
             setEscapeRadiusValue(controller.getEscapeRadius());
             setRGBPicker(controller.getCurrentRGBPicker());
+            setSmoothColoring(controller.isSmoothColoringEnabled());
             zoomPercent.setValue(controller.getZoomPercent());
             maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
         });
@@ -175,6 +177,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
                 controller.setMaxIterations(getMaxIterationsValue());
                 controller.setZoom(new double[]{getZoomXValue(), getZoomYValue()});
                 controller.setRGBPicker(getRGBPicker());
+                controller.setSmoothColoring(isSmoothColoringEnabled());
                 controller.setZoomPercent(zoomPercentVal);
                 controller.setMaxIterationsMultiplier(maxIterationsMultiplierVal);
 
@@ -217,7 +220,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
         }
 
         @Override
-        protected Void doInBackground() throws Exception {
+        protected Void doInBackground() {
             if(framesVal > 0) {
                 // Generate mandelbrot set
                 controller.generateNewSet();
@@ -281,7 +284,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
         }
 
         @Override
-        protected Void doInBackground() throws Exception {
+        protected Void doInBackground() {
             try {
                 FFmpeg ffmpeg = new FFmpeg("ffmpeg/ffmpeg");
                 FFprobe ffprobe = new FFprobe("ffmpeg/ffprobe");

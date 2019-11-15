@@ -180,4 +180,12 @@ public class MandelbrotSetController implements MandelbrotSetControls
     public void setMaxIterationsMultiplier(double maxIterationsMultiplier) {
         model.setMaxIterationsMultiplier(maxIterationsMultiplier);
     }
+
+    public boolean isSmoothColoringEnabled() {
+        return view.isSmoothColoringEnabled();
+    }
+
+    public void setSmoothColoring(boolean flag) {
+        view.setSmoothColoring(flag);
+    }
 }

@@ -81,6 +81,7 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
             setMaxIterationsValue(controller.getMaxIterations());
             setEscapeRadiusValue(controller.getEscapeRadius());
             setRGBPicker(controller.getCurrentRGBPicker());
+            setSmoothColoring(controller.isSmoothColoringEnabled());
         });
         buttonsPanel.add(currentDataGetter);
 
@@ -94,6 +95,7 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
                 controller.setMaxIterations(getMaxIterationsValue());
                 controller.setZoom(new double[]{getZoomXValue(), getZoomYValue()});
                 controller.setRGBPicker(getRGBPicker());
+                controller.setSmoothColoring(isSmoothColoringEnabled());
                 controller.generateNewSet();
                 BufferedImage img = controller.getBufferedImage();
 

@@ -1,6 +1,7 @@
 package io.github.mateusz00.MandelbrotSet;
 
 import io.github.mateusz00.MandelbrotSet.Dialogs.ImageGenerateDialog;
+import io.github.mateusz00.MandelbrotSet.Dialogs.SettingsDialog;
 import io.github.mateusz00.MandelbrotSet.Dialogs.VideoGenerateDialog;
 import io.github.mateusz00.MandelbrotSet.RGBPickers.*;
 import io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility;
@@ -46,6 +47,7 @@ public class Application
 
         addColorsMenu(view, menuBar);
         addGenerateMenu(menuBar);
+        addSettingsMenu(menuBar);
 
         frame.setJMenuBar(menuBar);
     }
@@ -96,6 +98,44 @@ public class Application
         });
         blue.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, ActionEvent.CTRL_MASK));
         colors.add(blue);
+    }
+
+    private void addSettingsMenu(JMenuBar menuBar) {
+        JMenu settings = new JMenu("Settings");
+        settings.setMnemonic(KeyEvent.VK_S);
+
+        JMenuItem configure = new JMenuItem("Configure...", KeyEvent.VK_C);
+        configure.addActionListener((e) -> {
+            SettingsDialog dialog = new SettingsDialog(mainWindow, controller);
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            dialog.setResizable(false);
+            dialog.pack();
+            SwingUtility.centerComponent(mainWindow.getLocationOnScreen(), mainWindow.getSize(), dialog);
+            dialog.setVisible(true);
+        });
+        configure.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+        settings.add(configure);
+
+        settings.addSeparator();
+        JMenuItem restoreDefault = new JMenuItem("Restore default settings", KeyEvent.VK_R);
+        restoreDefault.addActionListener((e) -> {
+
+        });
+        settings.add(restoreDefault);
+
+        JMenuItem importSettings = new JMenuItem("Import settings...", KeyEvent.VK_I);
+        importSettings.addActionListener((e) -> {
+
+        });
+        settings.add(importSettings);
+
+        JMenuItem exportSettings = new JMenuItem("Export settings...", KeyEvent.VK_E);
+        exportSettings.addActionListener((e) -> {
+
+        });
+        settings.add(exportSettings);
+
+        menuBar.add(settings);
     }
 
     void createImageDialog() {

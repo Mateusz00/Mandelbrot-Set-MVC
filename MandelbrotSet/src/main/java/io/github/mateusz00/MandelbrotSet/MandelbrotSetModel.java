@@ -19,7 +19,7 @@ public class MandelbrotSetModel extends Observable
     private static final double DEFAULT_ZOOM_X = 1.7;
     private static final double DEFAULT_ZOOM_Y = 1.3;
     private long maxIterations = DEFAULT_MAX_ITERATIONS;
-    private long escapeRadius = 4;
+    private long escapeRadius = 40;
     private final double[] zoom;
     private double zoomPercent = 0;
     private double[] xRange;

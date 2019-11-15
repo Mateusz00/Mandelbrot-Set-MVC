@@ -23,6 +23,7 @@ public class MandelbrotSetDialog extends JDialog
     private JFormattedTextField maxIterations;
     private JFormattedTextField escapeRadius;
     private JComboBox colors;
+    private JCheckBox smoothColoring;
     private final JPanel mainPanel;
 
     /**
@@ -84,6 +85,10 @@ public class MandelbrotSetDialog extends JDialog
         return ((RGBPicker) colors.getSelectedItem());
     }
 
+    protected boolean isSmoothColoringEnabled() {
+        return smoothColoring.isSelected();
+    }
+
     protected void setCenterXValue(double value) {
         centerX.setValue(value);
     }
@@ -110,6 +115,10 @@ public class MandelbrotSetDialog extends JDialog
 
     protected void setRGBPicker(RGBPicker rgbPicker) {
         colors.getModel().setSelectedItem(rgbPicker);
+    }
+
+    protected void setSmoothColoring(boolean flag) {
+        smoothColoring.setSelected(flag);
     }
 
     /**
@@ -202,12 +211,16 @@ public class MandelbrotSetDialog extends JDialog
     private JPanel createRGBPickerPanel() {
         JPanel panelRGBPicker = new JPanel();
         panelRGBPicker.setBorder(createFormPanelBorder("Coloring"));
-        panelRGBPicker.setLayout(new BorderLayout());
+        panelRGBPicker.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
         Object[] coloringAlgorithms = {new PickerRed(), new PickerRedDark(), new PickerBlue()};
         colors = new JComboBox(coloringAlgorithms);
         colors.setRenderer(new RGBPickerComboBoxRenderer());
-        panelRGBPicker.add(colors, BorderLayout.WEST);
+        panelRGBPicker.add(colors);
+
+        smoothColoring = new JCheckBox("Use smooth coloring");
+        smoothColoring.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
+        panelRGBPicker.add(smoothColoring);
 
         return panelRGBPicker;
     }
