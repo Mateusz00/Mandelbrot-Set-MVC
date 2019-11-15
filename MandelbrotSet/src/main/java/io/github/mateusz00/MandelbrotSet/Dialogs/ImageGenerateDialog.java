@@ -21,7 +21,7 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
      * Only adds some panels and components. Does not set default close operation, resizability, visibility etc.
      */
     public ImageGenerateDialog(JFrame mainWindow, MandelbrotSetController controller) {
-        super(mainWindow, "Generate image", true);
+        super(mainWindow, "Generate image", true, controller);
         this.controller = controller;
 
         // Set up imageFileChooser
@@ -73,16 +73,7 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
         buttonsPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         JButton currentDataGetter = new JButton("Current data");
-        currentDataGetter.addActionListener((e) -> {
-            setCenterXValue(controller.getCenter().getX());
-            setCenterYValue(controller.getCenter().getY());
-            setZoomXValue((controller.getZoom())[0]);
-            setZoomYValue((controller.getZoom())[1]);
-            setMaxIterationsValue(controller.getMaxIterations());
-            setEscapeRadiusValue(controller.getEscapeRadius());
-            setRGBPicker(controller.getCurrentRGBPicker());
-            setSmoothColoring(controller.isSmoothColoringEnabled());
-        });
+        currentDataGetter.addActionListener((e) -> loadCurrentValues());
         buttonsPanel.add(currentDataGetter);
 
         JButton generateButton = new JButton("Generate");
@@ -90,12 +81,7 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
             // Save file destination have to be chosen
             if(!saveDestination.getText().isEmpty()) {
                 // Generate mandelbrot set
-                controller.setEscapeRadius(getEscapeRadiusValue());
-                controller.setCenter(new Point2D.Double(getCenterXValue(), getCenterYValue()));
-                controller.setMaxIterations(getMaxIterationsValue());
-                controller.setZoom(new double[]{getZoomXValue(), getZoomYValue()});
-                controller.setRGBPicker(getRGBPicker());
-                controller.setSmoothColoring(isSmoothColoringEnabled());
+                flushValues();
                 controller.generateNewSet();
                 BufferedImage img = controller.getBufferedImage();
 

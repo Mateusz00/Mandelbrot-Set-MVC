@@ -4,7 +4,6 @@ import io.github.mateusz00.MandelbrotSet.MandelbrotSetController;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.text.NumberFormat;
 
 import static io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility.createFieldAndLabel;
@@ -19,7 +18,7 @@ public class SettingsDialog extends MandelbrotSetDialog
      * Only adds some panels and components. Does not set default close operation, resizability, visibility etc.
      */
     public SettingsDialog(JFrame mainWindow, MandelbrotSetController controller) {
-        super(mainWindow, "Settings", true);
+        super(mainWindow, "Settings", true, controller);
         this.controller = controller;
 
         addToMainPanel(createZoomingPanel());
@@ -27,17 +26,20 @@ public class SettingsDialog extends MandelbrotSetDialog
         loadCurrentValues();
     }
 
-    private void loadCurrentValues() {
-        setCenterXValue(controller.getCenter().getX());
-        setCenterYValue(controller.getCenter().getY());
-        setZoomXValue((controller.getZoom())[0]);
-        setZoomYValue((controller.getZoom())[1]);
-        setMaxIterationsValue(controller.getMaxIterations());
-        setEscapeRadiusValue(controller.getEscapeRadius());
-        setRGBPicker(controller.getCurrentRGBPicker());
-        setSmoothColoring(controller.isSmoothColoringEnabled());
+    @Override
+    protected void loadCurrentValues() {
+        super.loadCurrentValues();
         zoomPercent.setValue(controller.getZoomPercent());
         maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
+    }
+
+    @Override
+    protected void flushValues() {
+        super.flushValues();
+        controller.setZoomPercent(((Number) zoomPercent.getValue()).doubleValue());
+        controller.setMaxIterationsMultiplier(((Number) maxIterationsMultiplier.getValue()).doubleValue());
+
+        controller.generateNewSet();
     }
 
     private JPanel createZoomingPanel() {
@@ -62,18 +64,7 @@ public class SettingsDialog extends MandelbrotSetDialog
         savePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         saveButton = new JButton("Save settings");
-        saveButton.addActionListener((e) -> {
-            controller.setEscapeRadius(getEscapeRadiusValue());
-            controller.setCenter(new Point2D.Double(getCenterXValue(), getCenterYValue()));
-            controller.setMaxIterations(getMaxIterationsValue());
-            controller.setZoom(new double[]{getZoomXValue(), getZoomYValue()});
-            controller.setRGBPicker(getRGBPicker());
-            controller.setSmoothColoring(isSmoothColoringEnabled());
-            controller.setZoomPercent(((Number) zoomPercent.getValue()).doubleValue());
-            controller.setMaxIterationsMultiplier(((Number) maxIterationsMultiplier.getValue()).doubleValue());
-
-            controller.generateNewSet();
-        });
+        saveButton.addActionListener((e) -> flushValues());
         savePanel.add(saveButton);
 
         return savePanel;

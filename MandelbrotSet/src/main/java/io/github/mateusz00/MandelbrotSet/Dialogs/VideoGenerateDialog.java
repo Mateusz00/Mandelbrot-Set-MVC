@@ -38,7 +38,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
      * Only adds some panels and components. Does not set default close operation, resizability, visibility etc.
      */
     public VideoGenerateDialog(JFrame mainWindow, MandelbrotSetController controller) {
-        super(mainWindow, "Generate video", true);
+        super(mainWindow, "Generate video", true, controller);
         this.controller = controller;
 
         // Set up videoFileChooser
@@ -137,23 +137,26 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
         return panelVideoSettings;
     }
 
+    @Override
+    protected void loadCurrentValues() {
+        super.loadCurrentValues();
+        zoomPercent.setValue(controller.getZoomPercent());
+        maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
+    }
+
+    @Override
+    protected void flushValues() {
+        super.flushValues();
+        controller.setZoomPercent(((Number) zoomPercent.getValue()).doubleValue());
+        controller.setMaxIterationsMultiplier(((Number) maxIterationsMultiplier.getValue()).doubleValue());
+    }
+
     private JPanel createButtonsPanel() {
         JPanel lastPanel = new JPanel();
         lastPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         JButton currentDataGetter = new JButton("Current data");
-        currentDataGetter.addActionListener((e) -> {
-            setCenterXValue(controller.getCenter().getX());
-            setCenterYValue(controller.getCenter().getY());
-            setZoomXValue((controller.getZoom())[0]);
-            setZoomYValue((controller.getZoom())[1]);
-            setMaxIterationsValue(controller.getMaxIterations());
-            setEscapeRadiusValue(controller.getEscapeRadius());
-            setRGBPicker(controller.getCurrentRGBPicker());
-            setSmoothColoring(controller.isSmoothColoringEnabled());
-            zoomPercent.setValue(controller.getZoomPercent());
-            maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
-        });
+        currentDataGetter.addActionListener((e) -> loadCurrentValues());
         lastPanel.add(currentDataGetter);
 
         JButton generateButton = new JButton("Generate");
@@ -167,19 +170,10 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
 
                 double zoomPercentOld = controller.getZoomPercent();
                 double maxIterationsMultiplierOld = controller.getMaxIterationsMultiplier();
-
-                double zoomPercentVal = ((Number) zoomPercent.getValue()).doubleValue();
-                double maxIterationsMultiplierVal = ((Number) maxIterationsMultiplier.getValue()).doubleValue();
                 int digits = Utility.digitsNumber(framesVal);
 
-                controller.setEscapeRadius(getEscapeRadiusValue());
-                controller.setCenter(new Point2D.Double(getCenterXValue(), getCenterYValue()));
-                controller.setMaxIterations(getMaxIterationsValue());
-                controller.setZoom(new double[]{getZoomXValue(), getZoomYValue()});
-                controller.setRGBPicker(getRGBPicker());
-                controller.setSmoothColoring(isSmoothColoringEnabled());
-                controller.setZoomPercent(zoomPercentVal);
-                controller.setMaxIterationsMultiplier(maxIterationsMultiplierVal);
+                // Update mandelbrot set model
+                flushValues();
 
                 // Create directory for frames
                 File destination = new File(saveDestination.getText());

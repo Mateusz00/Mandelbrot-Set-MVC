@@ -1,10 +1,12 @@
 package io.github.mateusz00.MandelbrotSet.Dialogs;
 
+import io.github.mateusz00.MandelbrotSet.MandelbrotSetController;
 import io.github.mateusz00.MandelbrotSet.RGBPickers.*;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -25,12 +27,14 @@ public class MandelbrotSetDialog extends JDialog
     private JComboBox colors;
     private JCheckBox smoothColoring;
     private final JPanel mainPanel;
+    private MandelbrotSetController controller;
 
     /**
      * Only adds some panels and components. Does not set default close operation, resizability, visibility etc.
      */
-    public MandelbrotSetDialog(JFrame mainWindow, String title, boolean modal) {
+    public MandelbrotSetDialog(JFrame mainWindow, String title, boolean modal, MandelbrotSetController controller) {
         super(mainWindow, title, modal);
+        this.controller = controller;
 
         // Create container
         mainPanel = new JPanel();
@@ -126,6 +130,32 @@ public class MandelbrotSetDialog extends JDialog
      */
     public void addToMainPanel(Component component) {
         mainPanel.add(component);
+    }
+
+    /**
+     * Sets values of form fields to values currently set in mandelbrot set model
+     */
+    protected void loadCurrentValues() {
+        setCenterXValue(controller.getCenter().getX());
+        setCenterYValue(controller.getCenter().getY());
+        setZoomXValue((controller.getZoom())[0]);
+        setZoomYValue((controller.getZoom())[1]);
+        setMaxIterationsValue(controller.getMaxIterations());
+        setEscapeRadiusValue(controller.getEscapeRadius());
+        setRGBPicker(controller.getCurrentRGBPicker());
+        setSmoothColoring(controller.isSmoothColoringEnabled());
+    }
+
+    /**
+     * Updates controller with values from form fields
+     */
+    protected void flushValues() {
+        controller.setEscapeRadius(getEscapeRadiusValue());
+        controller.setCenter(new Point2D.Double(getCenterXValue(), getCenterYValue()));
+        controller.setMaxIterations(getMaxIterationsValue());
+        controller.setZoom(new double[]{getZoomXValue(), getZoomYValue()});
+        controller.setRGBPicker(getRGBPicker());
+        controller.setSmoothColoring(isSmoothColoringEnabled());
     }
 
     private JPanel createFormPanel() {
