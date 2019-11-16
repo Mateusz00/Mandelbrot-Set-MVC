@@ -6,13 +6,16 @@ import io.github.mateusz00.MandelbrotSet.Utilities.Utility;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MandelbrotSetController implements MandelbrotSetControls
 {
     private final int MOVE_PIXELS_X;
     private final int MOVE_PIXELS_Y;
-    private double zoomPercent = 0.07;
+    private final double DEFAULT_ZOOM_STEP = 0.07;
+    private double zoomStep = DEFAULT_ZOOM_STEP;
     private MandelbrotSetModel model;
     private MandelbrotSetView view;
     private final ReentrantLock zoomLock = new ReentrantLock();
@@ -96,19 +99,19 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     @Override
     public void zoomIn() {
-        tryZooming(zoomPercent);
+        tryZooming(zoomStep);
     }
 
     @Override
     public void zoomOut() {
-        tryZooming(-zoomPercent);
+        tryZooming(-zoomStep);
     }
 
     /**
      * Zooms in without creating new thread
      */
     public void zoomInNoMultithreading() {
-        model.zoom(zoomPercent);
+        model.zoom(zoomStep);
     }
 
     public void setMaxIterations(long maxIterations) {
@@ -165,12 +168,12 @@ public class MandelbrotSetController implements MandelbrotSetControls
         return view.getBufferedImage();
     }
 
-    public double getZoomPercent() {
-        return zoomPercent;
+    public double getZoomStep() {
+        return zoomStep;
     }
 
-    public void setZoomPercent(double zoomPercent) {
-        this.zoomPercent = zoomPercent;
+    public void setZoomStep(double zoomStep) {
+        this.zoomStep = zoomStep;
     }
 
     public double getMaxIterationsMultiplier() {
@@ -187,5 +190,63 @@ public class MandelbrotSetController implements MandelbrotSetControls
 
     public void setSmoothColoring(boolean flag) {
         view.setSmoothColoring(flag);
+    }
+
+    public void restoreDefaultSettings() {
+        model.restoreDefaultSettings();
+        view.restoreDefaultSettings();
+        zoomStep = DEFAULT_ZOOM_STEP;
+    }
+
+    public void exportSettings(File file) {
+        Properties save = new Properties();
+        save.setProperty("maxIterations", String.valueOf(model.getMaxIterations()));
+        save.setProperty("escapeRadius", String.valueOf(model.getEscapeRadius()));
+        save.setProperty("centerX", String.valueOf(model.getCenter().getX()));
+        save.setProperty("centerY", String.valueOf(model.getCenter().getY()));
+        save.setProperty("maxIterationsMultiplier", String.valueOf(model.getMaxIterationsMultiplier()));
+        save.setProperty("zoomX", String.valueOf(model.getZoom()[0]));
+        save.setProperty("zoomY", String.valueOf(model.getZoom()[1]));
+        save.setProperty("zoomStep", String.valueOf(zoomStep));
+        save.setProperty("zoomPercent", String.valueOf(model.getZoomPercent()));
+        save.setProperty("smoothColoring", String.valueOf(view.isSmoothColoringEnabled()));
+
+        try {
+            save.store(new FileOutputStream(file), "");
+        }
+        catch(FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void importSettings(File file) {
+        Properties load = new Properties();
+
+        try {
+            load.load(new FileInputStream(file));
+        }
+        catch(FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        double zoomX = Double.parseDouble(load.getProperty("zoomX"));
+        double zoomY = Double.parseDouble(load.getProperty("zoomY"));
+        double centerX = Double.parseDouble(load.getProperty("centerX"));
+        double centerY = Double.parseDouble(load.getProperty("centerY"));
+
+        setZoomStep(Double.parseDouble(load.getProperty("zoomStep")));
+        model.setMaxIterations(Long.parseLong(load.getProperty("maxIterations")));
+        model.setEscapeRadius(Long.parseLong(load.getProperty("escapeRadius")));
+        model.setMaxIterationsMultiplier(Double.parseDouble(load.getProperty("maxIterationsMultiplier")));
+        model.setZoomPercent(Double.parseDouble(load.getProperty("zoomPercent")));
+        model.setZoom(new double[]{zoomX, zoomY});
+        model.setCenter(new Point2D.Double(centerX, centerY));
+        view.setSmoothColoring(Boolean.parseBoolean(load.getProperty("smoothColoring")));
     }
 }

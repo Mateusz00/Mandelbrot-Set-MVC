@@ -139,4 +139,8 @@ public class MandelbrotSetView extends JPanel
     public void setSmoothColoring(boolean flag) {
         smoothColoring = flag;
     }
+
+    public void restoreDefaultSettings() {
+        setSmoothColoring(true);
+    }
 }

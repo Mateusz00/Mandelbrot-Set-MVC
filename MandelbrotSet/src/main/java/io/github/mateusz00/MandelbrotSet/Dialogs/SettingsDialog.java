@@ -29,17 +29,17 @@ public class SettingsDialog extends MandelbrotSetDialog
     @Override
     protected void loadCurrentValues() {
         super.loadCurrentValues();
-        zoomPercent.setValue(controller.getZoomPercent());
+        zoomPercent.setValue(controller.getZoomStep());
         maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
     }
 
     @Override
     protected void flushValues() {
         super.flushValues();
-        controller.setZoomPercent(((Number) zoomPercent.getValue()).doubleValue());
+        controller.setZoomStep(((Number) zoomPercent.getValue()).doubleValue());
         controller.setMaxIterationsMultiplier(((Number) maxIterationsMultiplier.getValue()).doubleValue());
 
-        controller.generateNewSet();
+        new Thread(() -> controller.generateNewSet()).start();
     }
 
     private JPanel createZoomingPanel() {

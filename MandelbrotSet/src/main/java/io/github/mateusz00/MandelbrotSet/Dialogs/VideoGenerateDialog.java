@@ -12,7 +12,6 @@ import org.apache.commons.io.FileUtils;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -140,14 +139,14 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
     @Override
     protected void loadCurrentValues() {
         super.loadCurrentValues();
-        zoomPercent.setValue(controller.getZoomPercent());
+        zoomPercent.setValue(controller.getZoomStep());
         maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
     }
 
     @Override
     protected void flushValues() {
         super.flushValues();
-        controller.setZoomPercent(((Number) zoomPercent.getValue()).doubleValue());
+        controller.setZoomStep(((Number) zoomPercent.getValue()).doubleValue());
         controller.setMaxIterationsMultiplier(((Number) maxIterationsMultiplier.getValue()).doubleValue());
     }
 
@@ -168,7 +167,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
                 if(framesVal <= 0)
                     return;
 
-                double zoomPercentOld = controller.getZoomPercent();
+                double zoomStepOld = controller.getZoomStep();
                 double maxIterationsMultiplierOld = controller.getMaxIterationsMultiplier();
                 int digits = Utility.digitsNumber(framesVal);
 
@@ -188,7 +187,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
                 progressDialog.setVisible(true);
 
                 // Set some old values that were overwritten by video settings
-                controller.setZoomPercent(zoomPercentOld);
+                controller.setZoomStep(zoomStepOld);
                 controller.setMaxIterationsMultiplier(maxIterationsMultiplierOld);
             }
             else

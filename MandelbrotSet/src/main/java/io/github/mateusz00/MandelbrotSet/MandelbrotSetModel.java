@@ -16,10 +16,13 @@ public class MandelbrotSetModel extends Observable
     private final Object stepLock = new Object();
     private final Object iterationsLock = new Object();
     private static final long DEFAULT_MAX_ITERATIONS = 250;
+    private static final long DEFAULT_ESCAPE_RADIUS = 40;
     private static final double DEFAULT_ZOOM_X = 1.7;
     private static final double DEFAULT_ZOOM_Y = 1.3;
+    private static final double DEFAULT_CENTER_X = -0.5;
+    private static final double DEFAULT_CENTER_Y = 0.1;
     private long maxIterations = DEFAULT_MAX_ITERATIONS;
-    private long escapeRadius = 40;
+    private long escapeRadius = DEFAULT_ESCAPE_RADIUS;
     private final double[] zoom;
     private double zoomPercent = 0;
     private double[] xRange;
@@ -38,7 +41,7 @@ public class MandelbrotSetModel extends Observable
     public MandelbrotSetModel(Dimension size) {
         this.size = size;
         results = new ArrayList<>(Collections.nCopies(size.width * size.height, new MandelbrotSetResult(0, 0)));
-        center = new Point2D.Double(-0.5, 0.1);
+        center = new Point2D.Double(DEFAULT_CENTER_X, DEFAULT_CENTER_Y);
         zoom = new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y};
         
         calculateRange();
@@ -282,6 +285,14 @@ public class MandelbrotSetModel extends Observable
         return size;
     }
 
+    public double getZoomPercent() {
+        return zoomPercent;
+    }
+
+    public void setZoomPercent(double zoomPercent) {
+        this.zoomPercent = zoomPercent;
+    }
+
     public void setMaxIterations(long maxIterations) {
         synchronized(iterationsLock) {
             this.maxIterations = maxIterations;
@@ -350,6 +361,15 @@ public class MandelbrotSetModel extends Observable
             calculateRange();
             calculateStep();
         }
+    }
+
+    public void restoreDefaultSettings() {
+        zoomPercent = 0;
+        setMaxIterations(DEFAULT_MAX_ITERATIONS);
+        setMaxIterationsMultiplier(1);
+        setEscapeRadius(DEFAULT_ESCAPE_RADIUS);
+        setCenter(new Point2D.Double(DEFAULT_CENTER_X, DEFAULT_CENTER_Y));
+        setZoom(new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y});
     }
 
     private class ForkGenerate extends RecursiveAction

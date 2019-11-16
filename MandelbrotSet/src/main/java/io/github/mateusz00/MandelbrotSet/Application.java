@@ -1,5 +1,6 @@
 package io.github.mateusz00.MandelbrotSet;
 
+import io.github.mateusz00.MandelbrotSet.Dialogs.ExtensionFilter;
 import io.github.mateusz00.MandelbrotSet.Dialogs.ImageGenerateDialog;
 import io.github.mateusz00.MandelbrotSet.Dialogs.SettingsDialog;
 import io.github.mateusz00.MandelbrotSet.Dialogs.VideoGenerateDialog;
@@ -10,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
 
 public class Application
 {
@@ -17,6 +19,17 @@ public class Application
     private static final int HEIGHT = 600;
     private final JFrame mainWindow = new JFrame("Mandelbrot Set");
     private MandelbrotSetController controller;
+    private final JFileChooser settingsChooser;
+
+    public Application() {
+        // Set up settingsChooser
+        ExtensionFilter ConfigurationExtension = new ExtensionFilter("Configuration File", "cfg");
+        ConfigurationExtension.setEnforcedSaveExtension("cfg");
+
+        settingsChooser = new JFileChooser();
+        settingsChooser.setAcceptAllFileFilterUsed(false);
+        settingsChooser.addChoosableFileFilter(ConfigurationExtension);
+    }
 
     public static void main(String[] args) {
         Application app = new Application();
@@ -119,19 +132,35 @@ public class Application
         settings.addSeparator();
         JMenuItem restoreDefault = new JMenuItem("Restore default settings", KeyEvent.VK_R);
         restoreDefault.addActionListener((e) -> {
-
+            controller.restoreDefaultSettings();
+            new Thread(() -> controller.generateNewSet()).start();
         });
         settings.add(restoreDefault);
 
         JMenuItem importSettings = new JMenuItem("Import settings...", KeyEvent.VK_I);
         importSettings.addActionListener((e) -> {
+            int returnVal = settingsChooser.showSaveDialog(mainWindow);
 
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
+                controller.importSettings(settingsChooser.getSelectedFile());
+                new Thread(() -> controller.generateNewSet()).start();
+            }
         });
         settings.add(importSettings);
 
         JMenuItem exportSettings = new JMenuItem("Export settings...", KeyEvent.VK_E);
         exportSettings.addActionListener((e) -> {
+            int returnVal = settingsChooser.showSaveDialog(mainWindow);
 
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
+                // Obtain filename and enforce chosen extension
+                String fileName = settingsChooser.getSelectedFile().getName();
+                fileName = ((ExtensionFilter) settingsChooser.getFileFilter()).enforceExtension(fileName);
+
+                // Construct path
+                File file = new File(settingsChooser.getSelectedFile().getParent(), fileName);
+                controller.exportSettings(file);
+            }
         });
         settings.add(exportSettings);
 
