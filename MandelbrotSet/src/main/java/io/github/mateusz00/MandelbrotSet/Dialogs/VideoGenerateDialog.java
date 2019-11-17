@@ -28,7 +28,7 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
     private JTextField saveDestination;
     private JButton fileChooseButton;
     private JFormattedTextField frames;
-    private JFormattedTextField zoomPercent;
+    private JFormattedTextField zoomStep;
     private JFormattedTextField maxIterationsMultiplier;
     private JCheckBox keepImages;
     private JCheckBox generateVideo;
@@ -102,8 +102,8 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
         JPanel videoSubPanel1 = new JPanel(new GridLayout(0, 2, 15, 2));
 
         frames = createFieldAndLabel(decimalFormat, videoSubPanel1, "Frames:");
-        zoomPercent = createFieldAndLabel(doubleFormat, videoSubPanel1, "Zoom:");
-        zoomPercent.setToolTipText("Sets how much will it zoom in/out with every frame (Negative for zooming out)");
+        zoomStep = createFieldAndLabel(doubleFormat, videoSubPanel1, "Zoom:");
+        zoomStep.setToolTipText("Sets how much will it zoom in/out with every frame (Use values bigger than 0)");
         maxIterationsMultiplier = createFieldAndLabel(doubleFormat, videoSubPanel1, "Max iterations multiplier:");
         maxIterationsMultiplier.setToolTipText("Sets how fast will max iterations increase while zooming in. " +
                 "Affects both coloring and computation speed (Higher = slower)");
@@ -139,14 +139,14 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
     @Override
     protected void loadCurrentValues() {
         super.loadCurrentValues();
-        zoomPercent.setValue(controller.getZoomStep());
+        zoomStep.setValue(controller.getZoomStep());
         maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
     }
 
     @Override
     protected void flushValues() {
         super.flushValues();
-        controller.setZoomStep(((Number) zoomPercent.getValue()).doubleValue());
+        controller.setZoomStep(Math.max(((Number) zoomStep.getValue()).doubleValue(), 0));
         controller.setMaxIterationsMultiplier(((Number) maxIterationsMultiplier.getValue()).doubleValue());
     }
 
@@ -221,9 +221,11 @@ public class VideoGenerateDialog extends MandelbrotSetDialog
                 setProgress((int) ((1 * 100) / framesVal));
 
                 // Generate all frames and save them as individual images
+                double zoomStep = controller.getZoomStep();
+
                 for(long i = 1; i < framesVal && !isCancelled(); ++i) {
                     setProgress((int) ((i * 100) / framesVal));
-                    controller.zoomInNoMultithreading();
+                    controller.zoom(zoomStep, true);
                     saveFrame(i);
                 }
             }

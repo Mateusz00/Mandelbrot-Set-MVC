@@ -24,7 +24,7 @@ public class MandelbrotSetModel extends Observable
     private long maxIterations = DEFAULT_MAX_ITERATIONS;
     private long escapeRadius = DEFAULT_ESCAPE_RADIUS;
     private final double[] zoom;
-    private double zoomPercent = 0;
+    private double zoomValue = 1;
     private double[] xRange;
     private double[] yRange;
     private Point2D.Double center;
@@ -268,15 +268,17 @@ public class MandelbrotSetModel extends Observable
 
     public void zoom(double zoomChange) {
         synchronized(rangeLock) { synchronized(zoom) { synchronized(stepLock) {
-            zoom[0] *= (1 - zoomChange);
-            zoom[1] *= (1 - zoomChange);
-
-            zoomPercent += zoomChange;
-            long temp = (zoomPercent > 0) ? (long) (DEFAULT_MAX_ITERATIONS * (1 + zoomPercent)) : DEFAULT_MAX_ITERATIONS;
-            maxIterations = (long) (temp * maxIterationsMultiplier);
+            zoomValue *= zoomChange;
+            zoom[0] = DEFAULT_ZOOM_X / zoomValue;
+            zoom[1] = DEFAULT_ZOOM_Y / zoomValue;
 
             calculateRange();
             calculateStep();
+
+            double newIterations = DEFAULT_MAX_ITERATIONS * (Math.log(3.4 / getXRange()) + 0.5);
+            long temp = Math.max((long) newIterations, DEFAULT_MAX_ITERATIONS);
+            maxIterations = (long) (temp * maxIterationsMultiplier);
+
             generate();
         } } }
     }
@@ -285,12 +287,12 @@ public class MandelbrotSetModel extends Observable
         return size;
     }
 
-    public double getZoomPercent() {
-        return zoomPercent;
+    public double getZoomValue() {
+        return zoomValue;
     }
 
-    public void setZoomPercent(double zoomPercent) {
-        this.zoomPercent = zoomPercent;
+    public void setZoomValue(double zoom) {
+        this.zoomValue = zoom;
     }
 
     public void setMaxIterations(long maxIterations) {
@@ -364,7 +366,7 @@ public class MandelbrotSetModel extends Observable
     }
 
     public void restoreDefaultSettings() {
-        zoomPercent = 0;
+        zoomValue = 1;
         setMaxIterations(DEFAULT_MAX_ITERATIONS);
         setMaxIterationsMultiplier(1);
         setEscapeRadius(DEFAULT_ESCAPE_RADIUS);

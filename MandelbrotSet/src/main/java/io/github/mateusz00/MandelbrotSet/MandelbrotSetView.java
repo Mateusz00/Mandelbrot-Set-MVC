@@ -15,7 +15,7 @@ import java.util.List;
 
 public class MandelbrotSetView extends JPanel
 {
-    private MandelbrotSetControls controller;
+    private MandelbrotSetController controller;
     private MandelbrotSetModel model;
     final private BufferedImage mandelbrotImg;
     private List<MandelbrotSetResult> results;
@@ -23,14 +23,26 @@ public class MandelbrotSetView extends JPanel
     private Dimension currentSize;
     private RGBPicker colorPicker = new PickerRed();
     private boolean smoothColoring = true;
+    private final RectangleSelector rectangleSelector = new RectangleSelector(this);
 
-    public MandelbrotSetView(MandelbrotSetModel pModel, MandelbrotSetControls pController) {
-        model = pModel;
-        controller = pController;
-        model.addObserver(new ModelObserver());
+    public MandelbrotSetView(MandelbrotSetModel model, MandelbrotSetController controller) {
+        this.model = model;
+        this.controller = controller;
         currentSize = model.getSize();
-        setPreferredSize(currentSize);
         mandelbrotImg = new BufferedImage(currentSize.width, currentSize.height, BufferedImage.TYPE_INT_RGB);
+
+        rectangleSelector.setRatio(currentSize.getWidth() / currentSize.getHeight());
+        rectangleSelector.setOnReleaseAction((e) -> {
+            final Dimension size = new Dimension(rectangleSelector.getSize());
+            final Point location = new Point(rectangleSelector.getLocation());
+            final Point center = new Point(location.x + (size.width / 2), location.y + (size.height / 2));
+
+            new Thread(() -> {
+                this.controller.moveCenterTo(center, true);
+                this.controller.zoom( 1 / (size.getWidth() / currentSize.getWidth()), true);
+            }).start();
+        });
+        model.addObserver(new ModelObserver());
         addBindings();
     }
 
@@ -68,6 +80,7 @@ public class MandelbrotSetView extends JPanel
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.drawImage(mandelbrotImg, 0, 0, null);
+        rectangleSelector.paintComponent(g);
     }
 
     private void addBindings() {

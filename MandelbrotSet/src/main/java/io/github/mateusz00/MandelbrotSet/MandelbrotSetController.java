@@ -14,26 +14,26 @@ public class MandelbrotSetController implements MandelbrotSetControls
 {
     private final int MOVE_PIXELS_X;
     private final int MOVE_PIXELS_Y;
-    private final double DEFAULT_ZOOM_STEP = 0.07;
+    private final double DEFAULT_ZOOM_STEP = 1.05;
     private double zoomStep = DEFAULT_ZOOM_STEP;
     private MandelbrotSetModel model;
     private MandelbrotSetView view;
     private final ReentrantLock zoomLock = new ReentrantLock();
     private final ReentrantLock moveLock = new ReentrantLock();
 
-    public MandelbrotSetController(MandelbrotSetModel model1) {
-        model = model1;
+    public MandelbrotSetController(MandelbrotSetModel model) {
+        this.model = model;
         MOVE_PIXELS_X = (int) (model.getSize().width * 0.02);
         MOVE_PIXELS_Y = (int) (model.getSize().height * 0.02);
     }
 
-    public void setView(MandelbrotSetView view1){
-        view = view1;
+    public void setView(MandelbrotSetView view){
+        this.view = view;
     }
 
-    public void removeView(MandelbrotSetView view1) {
-        if(view == view1)
-            view = null;
+    public void removeView(MandelbrotSetView view) {
+        if(this.view == view)
+            this.view = null;
     }
 
     private void tryMoving(Point changeVector) {
@@ -52,13 +52,13 @@ public class MandelbrotSetController implements MandelbrotSetControls
         }
     }
 
-    private void tryZooming(double zoomPercent) {
+    private void tryZooming(double zoom) {
         // Ensures that threads won't queue (makes app more responsive)
         if(!zoomLock.isLocked()) {
             new Thread(() -> {
                 if(zoomLock.tryLock()) {
                     try {
-                        model.zoom(zoomPercent);
+                        model.zoom(zoom);
                     }
                     finally {
                         zoomLock.unlock();
@@ -88,30 +88,43 @@ public class MandelbrotSetController implements MandelbrotSetControls
         tryMoving(new Point(0, MOVE_PIXELS_Y));
     }
 
-    @Override
-    public void moveCenterTo(Point point) {
+    public void moveCenterTo(Point point, boolean allowQueuing) {
         Point center = new Point(model.getSize().width / 2, model.getSize().height / 2);
         Point change = new Point(point.x - center.x, point.y - center.y);
 
-        if(Utility.vectorLength(change) > 0)
-            tryMoving(change);
+        if(Utility.vectorLength(change) > 0) {
+            if(!allowQueuing)
+                tryMoving(change);
+            else
+                model.moveCenter(change);
+        }
     }
 
     @Override
     public void zoomIn() {
-        tryZooming(zoomStep);
+        zoom(zoomStep, false);
+    }
+
+    /**
+     * Zooms in or out depending on zoomChange value
+     * @param zoom zooms in or out. Allowed range is (0, infinity>
+     * @param allowQueuing enables/disables queuing of threads. Disable to make app more responsive
+     */
+    public void zoom(double zoom, boolean allowQueuing) {
+        if(!allowQueuing)
+            tryZooming(zoom);
+        else
+            model.zoom(zoom);
     }
 
     @Override
     public void zoomOut() {
-        tryZooming(-zoomStep);
+        zoom(1 / zoomStep, false);
     }
 
-    /**
-     * Zooms in without creating new thread
-     */
-    public void zoomInNoMultithreading() {
-        model.zoom(zoomStep);
+    @Override
+    public void moveCenterTo(Point point) {
+        moveCenterTo(point, false);
     }
 
     public void setMaxIterations(long maxIterations) {
@@ -164,6 +177,9 @@ public class MandelbrotSetController implements MandelbrotSetControls
         model.generate();
     }
 
+    /**
+     * @return buffered image with RGB representation of mandelbrot set
+     */
     public BufferedImage getBufferedImage() {
         return view.getBufferedImage();
     }
@@ -208,7 +224,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
         save.setProperty("zoomX", String.valueOf(model.getZoom()[0]));
         save.setProperty("zoomY", String.valueOf(model.getZoom()[1]));
         save.setProperty("zoomStep", String.valueOf(zoomStep));
-        save.setProperty("zoomPercent", String.valueOf(model.getZoomPercent()));
+        save.setProperty("zoomValue", String.valueOf(model.getZoomValue()));
         save.setProperty("smoothColoring", String.valueOf(view.isSmoothColoringEnabled()));
 
         try {
@@ -244,7 +260,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
         model.setMaxIterations(Long.parseLong(load.getProperty("maxIterations")));
         model.setEscapeRadius(Long.parseLong(load.getProperty("escapeRadius")));
         model.setMaxIterationsMultiplier(Double.parseDouble(load.getProperty("maxIterationsMultiplier")));
-        model.setZoomPercent(Double.parseDouble(load.getProperty("zoomPercent")));
+        model.setZoomValue(Double.parseDouble(load.getProperty("zoomValue")));
         model.setZoom(new double[]{zoomX, zoomY});
         model.setCenter(new Point2D.Double(centerX, centerY));
         view.setSmoothColoring(Boolean.parseBoolean(load.getProperty("smoothColoring")));

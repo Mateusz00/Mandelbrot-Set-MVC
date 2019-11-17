@@ -4,6 +4,7 @@ import io.github.mateusz00.MandelbrotSet.MandelbrotSetController;
 
 import javax.swing.*;
 import java.awt.*;
+import java.math.RoundingMode;
 import java.text.NumberFormat;
 
 import static io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility.createFieldAndLabel;
@@ -11,7 +12,7 @@ import static io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility.createFie
 public class SettingsDialog extends MandelbrotSetDialog
 {
     private MandelbrotSetController controller;
-    private JFormattedTextField zoomPercent;
+    private JFormattedTextField zoomStep;
     private JFormattedTextField maxIterationsMultiplier;
     private JButton saveButton;
     /**
@@ -29,14 +30,14 @@ public class SettingsDialog extends MandelbrotSetDialog
     @Override
     protected void loadCurrentValues() {
         super.loadCurrentValues();
-        zoomPercent.setValue(controller.getZoomStep());
+        zoomStep.setValue(controller.getZoomStep());
         maxIterationsMultiplier.setValue(controller.getMaxIterationsMultiplier());
     }
 
     @Override
     protected void flushValues() {
         super.flushValues();
-        controller.setZoomStep(((Number) zoomPercent.getValue()).doubleValue());
+        controller.setZoomStep(Math.max(((Number) zoomStep.getValue()).doubleValue(), 0));
         controller.setMaxIterationsMultiplier(((Number) maxIterationsMultiplier.getValue()).doubleValue());
 
         new Thread(() -> controller.generateNewSet()).start();
@@ -50,8 +51,8 @@ public class SettingsDialog extends MandelbrotSetDialog
         doubleFormat.setMinimumFractionDigits(1);
         doubleFormat.setMaximumFractionDigits(Double.MAX_EXPONENT);
 
-        zoomPercent = createFieldAndLabel(doubleFormat, zoomingPanel, "Zoom:");
-        zoomPercent.setToolTipText("Sets how much will it zoom in/out with every frame (Negative for zooming out)");
+        zoomStep = createFieldAndLabel(doubleFormat, zoomingPanel, "Zoom:");
+        zoomStep.setToolTipText("Sets how much will it zoom in/out with every frame (Use values bigger than 0)");
         maxIterationsMultiplier = createFieldAndLabel(doubleFormat, zoomingPanel, "Max iterations multiplier:");
         maxIterationsMultiplier.setToolTipText("Sets how fast will max iterations increase while zooming in. " +
                 "Affects both coloring and computation speed (Higher = slower)");
