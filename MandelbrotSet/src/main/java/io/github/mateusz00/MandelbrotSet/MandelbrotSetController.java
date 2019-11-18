@@ -152,17 +152,31 @@ public class MandelbrotSetController implements MandelbrotSetControls
     }
 
     /**
-     * @return model's zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
+     * @return x axis range
      */
-    public double[] getZoom() {
-        return model.getZoom();
+    public double getXRange() {
+        return model.getXRange();
     }
 
     /**
-     * @param zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
+     * @return y axis range
      */
-    public void setZoom(double[] zoom) {
-        model.setZoom(zoom);
+    public double getYRange() {
+        return model.getYRange();
+    }
+
+    /**
+     * @param range x axis range
+     */
+    public void setXRange(double range) {
+        model.setXRange(range);
+    }
+
+    /**
+     * @param range y axis range
+     */
+    public void setYRange(double range) {
+        model.setYRange(range);
     }
 
     public RGBPicker getCurrentRGBPicker() {
@@ -221,10 +235,9 @@ public class MandelbrotSetController implements MandelbrotSetControls
         save.setProperty("centerX", String.valueOf(model.getCenter().getX()));
         save.setProperty("centerY", String.valueOf(model.getCenter().getY()));
         save.setProperty("maxIterationsMultiplier", String.valueOf(model.getMaxIterationsMultiplier()));
-        save.setProperty("zoomX", String.valueOf(model.getZoom()[0]));
-        save.setProperty("zoomY", String.valueOf(model.getZoom()[1]));
+        save.setProperty("xRange", String.valueOf(model.getXRange()));
+        save.setProperty("yRange", String.valueOf(model.getYRange()));
         save.setProperty("zoomStep", String.valueOf(zoomStep));
-        save.setProperty("zoomValue", String.valueOf(model.getZoomValue()));
         save.setProperty("smoothColoring", String.valueOf(view.isSmoothColoringEnabled()));
 
         try {
@@ -251,8 +264,6 @@ public class MandelbrotSetController implements MandelbrotSetControls
             e.printStackTrace();
         }
 
-        double zoomX = Double.parseDouble(load.getProperty("zoomX"));
-        double zoomY = Double.parseDouble(load.getProperty("zoomY"));
         double centerX = Double.parseDouble(load.getProperty("centerX"));
         double centerY = Double.parseDouble(load.getProperty("centerY"));
 
@@ -260,8 +271,8 @@ public class MandelbrotSetController implements MandelbrotSetControls
         model.setMaxIterations(Long.parseLong(load.getProperty("maxIterations")));
         model.setEscapeRadius(Long.parseLong(load.getProperty("escapeRadius")));
         model.setMaxIterationsMultiplier(Double.parseDouble(load.getProperty("maxIterationsMultiplier")));
-        model.setZoomValue(Double.parseDouble(load.getProperty("zoomValue")));
-        model.setZoom(new double[]{zoomX, zoomY});
+        model.setXRange(Double.parseDouble(load.getProperty("xRange")));
+        model.setYRange(Double.parseDouble(load.getProperty("yRange")));
         model.setCenter(new Point2D.Double(centerX, centerY));
         view.setSmoothColoring(Boolean.parseBoolean(load.getProperty("smoothColoring")));
     }

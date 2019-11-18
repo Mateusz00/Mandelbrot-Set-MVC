@@ -25,13 +25,14 @@ public class RectangleSelector
                 if(e.getButton() == MouseEvent.BUTTON3) {
                     isActive = true;
                     firstCorner.setLocation(e.getPoint());
+                    rectangle.setSize(0, 0);
                 }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if(e.getButton() == MouseEvent.BUTTON3 && isActive) {
-                    if(onRelease != null)
+                    if(onRelease != null && rectangle.getSize().width > 0 && rectangle.getSize().height > 0)
                         onRelease.accept(e);
 
                     isActive = false;

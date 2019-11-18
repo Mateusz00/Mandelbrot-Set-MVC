@@ -20,8 +20,8 @@ public class MandelbrotSetDialog extends JDialog
     private final static Border formMarginBorder = BorderFactory.createEmptyBorder(0, 0, 2, 0);
     private JFormattedTextField centerX;
     private JFormattedTextField centerY;
-    private JFormattedTextField zoomX;
-    private JFormattedTextField zoomY;
+    private JFormattedTextField xRange;
+    private JFormattedTextField yRange;
     private JFormattedTextField maxIterations;
     private JFormattedTextField escapeRadius;
     private JComboBox colors;
@@ -69,12 +69,12 @@ public class MandelbrotSetDialog extends JDialog
         return ((Number) centerY.getValue()).doubleValue();
     }
 
-    protected double getZoomXValue() {
-        return ((Number) zoomX.getValue()).doubleValue();
+    protected double getXRangeValue() {
+        return ((Number) xRange.getValue()).doubleValue();
     }
 
-    protected double getZoomYValue() {
-        return ((Number) zoomY.getValue()).doubleValue();
+    protected double getYRangeValue() {
+        return ((Number) yRange.getValue()).doubleValue();
     }
 
     protected long getMaxIterationsValue() {
@@ -101,12 +101,12 @@ public class MandelbrotSetDialog extends JDialog
         centerY.setValue(value);
     }
 
-    protected void setZoomXValue(double value) {
-        zoomX.setValue(value);
+    protected void setXRangeValue(double value) {
+        xRange.setValue(value);
     }
 
-    protected void setZoomYValue(double value) {
-        zoomY.setValue(value);
+    protected void setYRangeValue(double value) {
+        yRange.setValue(value);
     }
 
     protected void setMaxIterationsValue(long value) {
@@ -138,8 +138,8 @@ public class MandelbrotSetDialog extends JDialog
     protected void loadCurrentValues() {
         setCenterXValue(controller.getCenter().getX());
         setCenterYValue(controller.getCenter().getY());
-        setZoomXValue((controller.getZoom())[0]);
-        setZoomYValue((controller.getZoom())[1]);
+        setXRangeValue(controller.getXRange());
+        setYRangeValue(controller.getYRange());
         setMaxIterationsValue(controller.getMaxIterations());
         setEscapeRadiusValue(controller.getEscapeRadius());
         setRGBPicker(controller.getCurrentRGBPicker());
@@ -153,7 +153,8 @@ public class MandelbrotSetDialog extends JDialog
         controller.setEscapeRadius(getEscapeRadiusValue());
         controller.setCenter(new Point2D.Double(getCenterXValue(), getCenterYValue()));
         controller.setMaxIterations(getMaxIterationsValue());
-        controller.setZoom(new double[]{getZoomXValue(), getZoomYValue()});
+        controller.setXRange(getXRangeValue());
+        controller.setYRange(getYRangeValue());
         controller.setRGBPicker(getRGBPicker());
         controller.setSmoothColoring(isSmoothColoringEnabled());
     }
@@ -176,7 +177,7 @@ public class MandelbrotSetDialog extends JDialog
 
         // Add panels to form panel
         formPanel.add(createCenterPanel(doubleFormat));
-        formPanel.add(createZoomPanel(doubleFormat));
+        formPanel.add(createRangePanel(doubleFormat));
         formPanel.add(createIterationsPanel(decimalFormat));
         formPanel.add(createEscapeRadiusPanel(decimalFormat));
         formPanel.add(createRGBPickerPanel());
@@ -199,14 +200,14 @@ public class MandelbrotSetDialog extends JDialog
         return panelCenter;
     }
 
-    private JPanel createZoomPanel(Format doubleFormat) {
+    private JPanel createRangePanel(Format doubleFormat) {
         JPanel panelZoom = new JPanel(new GridLayout(1, 2, 5, 5));
-        panelZoom.setBorder(createFormPanelBorder("Zoom"));
+        panelZoom.setBorder(createFormPanelBorder("Range"));
         JPanel subPanelZoom1 = new JPanel(new BorderLayout(5, 5));
         JPanel subPanelZoom2 = new JPanel(new BorderLayout(5, 5));
 
-        zoomX = createFieldAndLabel(doubleFormat, subPanelZoom1, "x:", BorderLayout.WEST, BorderLayout.CENTER);
-        zoomY = createFieldAndLabel(doubleFormat, subPanelZoom2, "y:", BorderLayout.WEST, BorderLayout.CENTER);
+        xRange = createFieldAndLabel(doubleFormat, subPanelZoom1, "x:", BorderLayout.WEST, BorderLayout.CENTER);
+        yRange = createFieldAndLabel(doubleFormat, subPanelZoom2, "y:", BorderLayout.WEST, BorderLayout.CENTER);
 
         panelZoom.add(subPanelZoom1);
         panelZoom.add(subPanelZoom2);

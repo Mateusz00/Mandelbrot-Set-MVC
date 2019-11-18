@@ -17,16 +17,14 @@ public class MandelbrotSetModel extends Observable
     private final Object iterationsLock = new Object();
     private static final long DEFAULT_MAX_ITERATIONS = 250;
     private static final long DEFAULT_ESCAPE_RADIUS = 40;
-    private static final double DEFAULT_ZOOM_X = 1.7;
-    private static final double DEFAULT_ZOOM_Y = 1.3;
+    private static final double DEFAULT_X_RANGE = 3.4;
+    private static final double DEFAULT_Y_RANGE = 2.6;
     private static final double DEFAULT_CENTER_X = -0.5;
     private static final double DEFAULT_CENTER_Y = 0.1;
     private long maxIterations = DEFAULT_MAX_ITERATIONS;
     private long escapeRadius = DEFAULT_ESCAPE_RADIUS;
-    private final double[] zoom;
-    private double zoomValue = 1;
-    private double[] xRange;
-    private double[] yRange;
+    private double xRange = DEFAULT_X_RANGE;
+    private double yRange = DEFAULT_Y_RANGE;
     private Point2D.Double center;
     private double yStep;
     private double xStep;
@@ -42,9 +40,7 @@ public class MandelbrotSetModel extends Observable
         this.size = size;
         results = new ArrayList<>(Collections.nCopies(size.width * size.height, new MandelbrotSetResult(0, 0)));
         center = new Point2D.Double(DEFAULT_CENTER_X, DEFAULT_CENTER_Y);
-        zoom = new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y};
-        
-        calculateRange();
+
         calculateStep();
     }
 
@@ -84,8 +80,8 @@ public class MandelbrotSetModel extends Observable
      * @param line line
      */
     private void generateLine(int firstPixel, int lastPixel, int line) {
-        double Pi = yRange[0] + yStep*line;
-        double Pr = xRange[0] + xStep*firstPixel;
+        double Pi = (center.y - yRange / 2.0) + yStep * line;
+        double Pr = (center.x - xRange / 2.0) + xStep * firstPixel;
 
         for(int i = firstPixel; i < lastPixel; ++i, Pr += xStep)
             results.set(line * size.width + i, getIterations(Pr, Pi));
@@ -132,14 +128,13 @@ public class MandelbrotSetModel extends Observable
      * @param changeVector which direction and how far(in pixels) will center be moved.
      */
     public void moveCenter(Point changeVector) {
-        synchronized(rangeLock) { synchronized(stepLock) {  synchronized(zoom) {
+        synchronized(rangeLock) { synchronized(stepLock) {
             double xChange = xStep * changeVector.getX();
             double yChange = yStep * changeVector.getY();
 
             center.setLocation(center.getX() + xChange, center.getY() + yChange);
-            calculateRange();
             moveMandelbrotSet(changeVector);
-        } } }
+        } }
     }
 
     private void moveMandelbrotSet(Point changeVectorPixels) {
@@ -240,23 +235,30 @@ public class MandelbrotSetModel extends Observable
         notifyObservers();
     }
 
-    private double getXRange() {
+    public double getXRange() {
         synchronized(rangeLock) {
-            return (xRange[1] - xRange[0]);
+            return xRange;
         }
     }
 
-    private double getYRange() {
+    public void setXRange(double range) {
         synchronized(rangeLock) {
-            return (yRange[1] - yRange[0]);
+            xRange = range;
+            calculateStep();
         }
     }
 
-    private void calculateRange() {
-        synchronized(rangeLock) { synchronized(zoom) {
-            xRange = new double[]{center.getX() - zoom[0], center.getX() + zoom[0]};
-            yRange = new double[]{center.getY() - zoom[1], center.getY() + zoom[1]};
-        } }
+    public double getYRange() {
+        synchronized(rangeLock) {
+            return yRange;
+        }
+    }
+
+    public void setYRange(double range) {
+        synchronized(rangeLock) {
+            yRange = range;
+            calculateStep();
+        }
     }
 
     private void calculateStep() {
@@ -267,32 +269,24 @@ public class MandelbrotSetModel extends Observable
     }
 
     public void zoom(double zoomChange) {
-        synchronized(rangeLock) { synchronized(zoom) { synchronized(stepLock) {
-            zoomValue *= zoomChange;
-            zoom[0] = DEFAULT_ZOOM_X / zoomValue;
-            zoom[1] = DEFAULT_ZOOM_Y / zoomValue;
+        synchronized(rangeLock) { synchronized(stepLock) {
+            xRange /= zoomChange;
+            yRange /= zoomChange;
 
-            calculateRange();
-            calculateStep();
-
+            // Calculate new max iterations value
             double newIterations = DEFAULT_MAX_ITERATIONS * (Math.log(3.4 / getXRange()) + 0.5);
             long temp = Math.max((long) newIterations, DEFAULT_MAX_ITERATIONS);
             maxIterations = (long) (temp * maxIterationsMultiplier);
 
+            calculateStep();
             generate();
-        } } }
+        } }
     }
+
+    //private double calculateZoomValue(double )
 
     public Dimension getSize() {
         return size;
-    }
-
-    public double getZoomValue() {
-        return zoomValue;
-    }
-
-    public void setZoomValue(double zoom) {
-        this.zoomValue = zoom;
     }
 
     public void setMaxIterations(long maxIterations) {
@@ -316,8 +310,6 @@ public class MandelbrotSetModel extends Observable
     public void setCenter(Point2D.Double center) {
         synchronized(rangeLock) {
             this.center = center;
-
-            calculateRange();
         }
     }
 
@@ -343,35 +335,13 @@ public class MandelbrotSetModel extends Observable
         }
     }
 
-    /**
-     * @return model's zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
-     */
-    public double[] getZoom() {
-        synchronized(zoom) {
-            return zoom;
-        }
-    }
-
-    /**
-     * @param zoom array containing 2 values. (0 = xZoom, 1 = yZoom)
-     */
-    public void setZoom(double[] zoom) {
-        synchronized(zoom) {
-            this.zoom[0] = zoom[0];
-            this.zoom[1] = zoom[1];
-
-            calculateRange();
-            calculateStep();
-        }
-    }
-
     public void restoreDefaultSettings() {
-        zoomValue = 1;
         setMaxIterations(DEFAULT_MAX_ITERATIONS);
         setMaxIterationsMultiplier(1);
         setEscapeRadius(DEFAULT_ESCAPE_RADIUS);
         setCenter(new Point2D.Double(DEFAULT_CENTER_X, DEFAULT_CENTER_Y));
-        setZoom(new double[]{DEFAULT_ZOOM_X, DEFAULT_ZOOM_Y});
+        setXRange(DEFAULT_X_RANGE);
+        setYRange(DEFAULT_Y_RANGE);
     }
 
     private class ForkGenerate extends RecursiveAction
