@@ -10,6 +10,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.List;
 
@@ -17,7 +19,7 @@ public class MandelbrotSetView extends JPanel
 {
     private MandelbrotSetController controller;
     private MandelbrotSetModel model;
-    final private BufferedImage mandelbrotImg;
+    private BufferedImage mandelbrotImg;
     private List<MandelbrotSetResult> results;
     private long currentMaxIterations = 0;
     private Dimension currentSize;
@@ -29,6 +31,7 @@ public class MandelbrotSetView extends JPanel
         this.model = model;
         this.controller = controller;
         currentSize = model.getSize();
+        setPreferredSize(currentSize);
         mandelbrotImg = new BufferedImage(currentSize.width, currentSize.height, BufferedImage.TYPE_INT_RGB);
 
         rectangleSelector.setRatio(currentSize.getWidth() / currentSize.getHeight());
@@ -42,7 +45,16 @@ public class MandelbrotSetView extends JPanel
                 this.controller.zoom( 1 / (size.getWidth() / currentSize.getWidth()), true);
             }).start();
         });
+
         model.addObserver(new ModelObserver());
+        model.addPropertyChangeListener("size", (evt) -> {
+            Dimension size = (Dimension) evt.getNewValue();
+            mandelbrotImg = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_RGB);
+            rectangleSelector.setRatio(size.getWidth() / size.getHeight());
+            currentSize = size;
+            setPreferredSize(size);
+        });
+
         addBindings();
     }
 

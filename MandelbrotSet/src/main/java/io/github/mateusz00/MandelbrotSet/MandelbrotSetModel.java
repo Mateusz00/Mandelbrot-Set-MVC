@@ -2,6 +2,8 @@ package io.github.mateusz00.MandelbrotSet;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +13,8 @@ import java.util.concurrent.RecursiveAction;
 
 public class MandelbrotSetModel extends Observable
 {
-    private final ArrayList<MandelbrotSetResult> results;
+    private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+    private ArrayList<MandelbrotSetResult> results;
     private final Object rangeLock = new Object();
     private final Object stepLock = new Object();
     private final Object iterationsLock = new Object();
@@ -283,7 +286,16 @@ public class MandelbrotSetModel extends Observable
         } }
     }
 
-    //private double calculateZoomValue(double )
+    public void setSize(Dimension size) {
+        // If size didn't change then don't do anything
+        if(this.size.width != size.width || this.size.height != size.height) {
+            propertyChangeSupport.firePropertyChange("size", this.size, size);
+            this.size = size;
+            results = new ArrayList<>(Collections.nCopies(size.width * size.height, new MandelbrotSetResult(0, 0)));
+            calculateStep();
+            generate();
+        }
+    }
 
     public Dimension getSize() {
         return size;
@@ -342,6 +354,14 @@ public class MandelbrotSetModel extends Observable
         setCenter(new Point2D.Double(DEFAULT_CENTER_X, DEFAULT_CENTER_Y));
         setXRange(DEFAULT_X_RANGE);
         setYRange(DEFAULT_Y_RANGE);
+    }
+
+    public void addPropertyChangeListener(String property, PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(property, listener);
+    }
+
+    public void removePropertyChangeListener(String property, PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(property, listener);
     }
 
     private class ForkGenerate extends RecursiveAction

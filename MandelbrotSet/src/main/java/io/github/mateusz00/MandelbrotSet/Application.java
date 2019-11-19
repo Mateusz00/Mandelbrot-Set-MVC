@@ -10,6 +10,8 @@ import io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 
@@ -29,6 +31,13 @@ public class Application
         settingsChooser = new JFileChooser();
         settingsChooser.setAcceptAllFileFilterUsed(false);
         settingsChooser.addChoosableFileFilter(ConfigurationExtension);
+
+        mainWindow.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                controller.setMandelbrotSize(((JFrame) e.getComponent()).getContentPane().getSize());
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -44,15 +53,12 @@ public class Application
         controller.setView(view);
 
         addMenuBar(mainWindow, view);
-        mainWindow.setResizable(false);
+        mainWindow.setResizable(true);
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainWindow.add(view);
-        mainWindow.getContentPane().setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        new MandelbrotSetInitializer().execute();
         mainWindow.pack();
         mainWindow.setVisible(true);
-
-        // Generate in different thread so it doesn't block GUI
-        new Thread(() -> model.generate()).start();
     }
 
     private void addMenuBar(JFrame frame, MandelbrotSetView view) {
@@ -183,5 +189,21 @@ public class Application
         dialog.pack();
         SwingUtility.centerComponent(mainWindow.getLocationOnScreen(), mainWindow.getSize(), dialog);
         dialog.setVisible(true);
+    }
+
+    private class MandelbrotSetInitializer extends SwingWorker<Void, Void>
+    {
+        @Override
+        protected Void doInBackground() {
+            controller.generateNewSet();
+
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            mainWindow.pack();
+            mainWindow.setVisible(true);
+        }
     }
 }

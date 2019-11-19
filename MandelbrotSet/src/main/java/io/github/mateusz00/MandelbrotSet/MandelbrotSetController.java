@@ -276,4 +276,12 @@ public class MandelbrotSetController implements MandelbrotSetControls
         model.setCenter(new Point2D.Double(centerX, centerY));
         view.setSmoothColoring(Boolean.parseBoolean(load.getProperty("smoothColoring")));
     }
+
+    public void setMandelbrotSize(Dimension size) {
+        model.setSize(size);
+    }
+
+    public Dimension getMandelbrotSize() {
+        return model.getSize();
+    }
 }
