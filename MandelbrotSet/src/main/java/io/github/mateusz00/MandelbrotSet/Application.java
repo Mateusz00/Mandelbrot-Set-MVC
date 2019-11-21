@@ -22,6 +22,7 @@ public class Application
     private final JFrame mainWindow = new JFrame("Mandelbrot Set");
     private MandelbrotSetController controller;
     private final JFileChooser settingsChooser;
+    private final JPanel bindingsPanel;
 
     public Application() {
         // Set up settingsChooser
@@ -38,6 +39,19 @@ public class Application
                 controller.setMandelbrotSize(((JFrame) e.getComponent()).getContentPane().getSize());
             }
         });
+
+        // Initialize bindingsPanel
+        bindingsPanel = new JPanel(new GridLayout(5, 2, 0, 10));
+        bindingsPanel.add(new JLabel("Z:"));
+        bindingsPanel.add(new JLabel("Zoom in"));
+        bindingsPanel.add(new JLabel("X:"));
+        bindingsPanel.add(new JLabel("Zoom out"));
+        bindingsPanel.add(new JLabel("Arrows:"));
+        bindingsPanel.add(new JLabel("Move center"));
+        bindingsPanel.add(new JLabel("LMB:"));
+        bindingsPanel.add(new JLabel("Move center"));
+        bindingsPanel.add(new JLabel("RMB:"));
+        bindingsPanel.add(new JLabel("Zoom in by selecting"));
     }
 
     public static void main(String[] args) {
@@ -67,6 +81,7 @@ public class Application
         addColorsMenu(view, menuBar);
         addGenerateMenu(menuBar);
         addSettingsMenu(menuBar);
+        addHelpMenu(menuBar);
 
         frame.setJMenuBar(menuBar);
     }
@@ -171,6 +186,26 @@ public class Application
         settings.add(exportSettings);
 
         menuBar.add(settings);
+    }
+
+    private void addHelpMenu(JMenuBar menuBar) {
+        JMenu helpMenu = new JMenu("Help");
+        helpMenu.setMnemonic(KeyEvent.VK_H);
+
+        JMenuItem binds = new JMenuItem("Key bindings");
+        binds.setMnemonic(KeyEvent.VK_K);
+        binds.addActionListener((e) ->
+            JOptionPane.showMessageDialog(mainWindow, bindingsPanel, "Bindings", JOptionPane.PLAIN_MESSAGE));
+        helpMenu.add(binds);
+
+        JMenuItem about = new JMenuItem("About");
+        about.setMnemonic(KeyEvent.VK_A);
+        about.addActionListener((e) ->
+            JOptionPane.showMessageDialog(mainWindow, "Author: Mateusz Sęk\nSource code: " +
+                            "https://github.com/Mateusz00/Mandelbrot-Set-MVC", "About", JOptionPane.PLAIN_MESSAGE));
+        helpMenu.add(about);
+
+        menuBar.add(helpMenu);
     }
 
     void createImageDialog() {
