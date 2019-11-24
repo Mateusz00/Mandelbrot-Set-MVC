@@ -51,6 +51,7 @@ public class MandelbrotSetView extends JPanel
             rectangleSelector.setRatio(size.getWidth() / size.getHeight());
             currentSize = size;
             setPreferredSize(size);
+            System.out.println(currentSize);
         });
 
         addBindings();

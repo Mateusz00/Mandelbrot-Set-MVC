@@ -10,9 +10,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-public class ImageGenerateDialog extends MandelbrotSetDialog
+public class ImageGenerateDialog extends GenerateDialog
 {
-    private final MandelbrotSetController controller;
     private final JFileChooser imageFileChooser;
     private JTextField saveDestination;
     private JButton fileChooseButton;
@@ -22,7 +21,6 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
      */
     public ImageGenerateDialog(JFrame mainWindow, MandelbrotSetController controller) {
         super(mainWindow, "Generate image", true, controller);
-        this.controller = controller;
 
         // Set up imageFileChooser
         ExtensionFilter PNGExtension = new ExtensionFilter("PNG (*.png)", "png");
@@ -80,10 +78,14 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
         generateButton.addActionListener((e) -> {
             // Save file destination have to be chosen
             if(!saveDestination.getText().isEmpty()) {
+                // Save values that will be restored after generating image
+                int sizeX = getController().getMandelbrotSize().width;
+                int sizeY = getController().getMandelbrotSize().height;
+
                 // Generate mandelbrot set
                 flushValues();
-                controller.generateNewSet();
-                BufferedImage img = controller.getBufferedImage();
+                getController().generateNewSet();
+                BufferedImage img = getController().getBufferedImage();
 
                 // Write generated mandelbrot set to file
                 File file = new File(saveDestination.getText());
@@ -94,6 +96,9 @@ public class ImageGenerateDialog extends MandelbrotSetDialog
                 }
                 catch(IOException exception) {
                     exception.printStackTrace();
+                }
+                finally {
+                    getController().setMandelbrotSize(new Dimension(sizeX, sizeY));
                 }
             }
             else

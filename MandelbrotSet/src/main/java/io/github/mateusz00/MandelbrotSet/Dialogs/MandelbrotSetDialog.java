@@ -93,6 +93,10 @@ public class MandelbrotSetDialog extends JDialog
         return smoothColoring.isSelected();
     }
 
+    protected MandelbrotSetController getController() {
+        return controller;
+    }
+
     protected void setCenterXValue(double value) {
         centerX.setValue(value);
     }
