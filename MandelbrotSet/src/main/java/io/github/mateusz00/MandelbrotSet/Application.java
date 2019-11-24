@@ -9,10 +9,7 @@ import io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.File;
 
 public class Application
@@ -23,6 +20,8 @@ public class Application
     private MandelbrotSetController controller;
     private final JFileChooser settingsChooser;
     private final JPanel bindingsPanel;
+    private final GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()[0];
+    private final JMenuBar menuBar = new JMenuBar();
 
     public Application() {
         // Set up settingsChooser
@@ -76,8 +75,6 @@ public class Application
     }
 
     private void addMenuBar(JFrame frame, MandelbrotSetView view) {
-        JMenuBar menuBar = new JMenuBar();
-
         addColorsMenu(view, menuBar);
         addGenerateMenu(menuBar);
         addSettingsMenu(menuBar);
@@ -184,6 +181,25 @@ public class Application
             }
         });
         settings.add(exportSettings);
+
+        settings.addSeparator();
+        JCheckBoxMenuItem fullscreen = new JCheckBoxMenuItem("Fullscreen");
+        fullscreen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0));
+        fullscreen.addItemListener((e) -> {
+            if(((JCheckBoxMenuItem) e.getSource()).isSelected()) {
+                mainWindow.dispose();
+                mainWindow.setUndecorated(true);
+                device.setFullScreenWindow(mainWindow);
+                mainWindow.setVisible(true);
+            }
+            else {
+                mainWindow.dispose();
+                mainWindow.setUndecorated(false);
+                device.setFullScreenWindow(null);
+                mainWindow.setVisible(true);
+            }
+        });
+        settings.add(fullscreen);
 
         menuBar.add(settings);
     }
