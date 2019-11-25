@@ -93,9 +93,15 @@ public class ImageGenerateDialog extends GenerateDialog
                 try {
                     String extension = ((ExtensionFilter) imageFileChooser.getFileFilter()).getEnforcedSaveExtension();
                     ImageIO.write(img, extension, file);
+
+                    JOptionPane.showMessageDialog(this, "Finished generating image",
+                            "Task completed", JOptionPane.INFORMATION_MESSAGE);
                 }
                 catch(IOException exception) {
                     exception.printStackTrace();
+
+                    JOptionPane.showMessageDialog(this, "Couldn't save image",
+                            "Failure", JOptionPane.ERROR_MESSAGE);
                 }
                 finally {
                     getController().setMandelbrotSize(new Dimension(sizeX, sizeY));
