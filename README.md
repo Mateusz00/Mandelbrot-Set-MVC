@@ -23,9 +23,9 @@ Color smoothing equation can be found here: http://linas.org/art-gallery/escape/
 Zooming is achieved by decreasing/increasing mandelbrot set range
 
 # Examples
-[![Watch the video](https://drive.google.com/uc?export=view&id=1gA7-gHr1ZYfARmz1dubQtesqjM066B1x)](https://www.youtube.com/watch?v=g83zU1ywErM)
-![image](https://drive.google.com/uc?export=view&id=1PP00Ayne8or3vmmz4Ot5oa9zSt-RIn3D)
-![image](https://drive.google.com/uc?export=view&id=1_Ni29daHjNknjiiq6IfrZ48G6skTbkMb)
+[![Watch the video](https://github.com/Mateusz00/resources-for-repositories/blob/master/mandel_video.jpg)](https://www.youtube.com/watch?v=g83zU1ywErM)
+![image of video settings](https://github.com/Mateusz00/resources-for-repositories/blob/master/mandel_settings_video.jpg)
+![image](https://github.com/Mateusz00/resources-for-repositories/blob/master/mandel_settings_image.jpg)
 <img src="https://github.com/Mateusz00/Mandelbrot-Set-MVC/blob/master/Examples/example01.png" alt="example01.png"/>
 <img src="https://github.com/Mateusz00/Mandelbrot-Set-MVC/blob/master/Examples/example03.png" alt="example03.png"/>
 <img src="https://github.com/Mateusz00/Mandelbrot-Set-MVC/blob/master/Examples/example05.png" alt="example05.png"/></br>
