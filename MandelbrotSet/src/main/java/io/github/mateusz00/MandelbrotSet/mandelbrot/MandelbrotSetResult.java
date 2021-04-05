@@ -1,4 +1,4 @@
-package io.github.mateusz00.MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet.mandelbrot;
 
 public class MandelbrotSetResult
 {

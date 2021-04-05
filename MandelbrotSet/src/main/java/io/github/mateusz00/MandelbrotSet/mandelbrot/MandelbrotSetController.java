@@ -1,7 +1,8 @@
-package io.github.mateusz00.MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet.mandelbrot;
 
 import io.github.mateusz00.MandelbrotSet.RGBPickers.RGBPicker;
-import io.github.mateusz00.MandelbrotSet.Utilities.Utility;
+import io.github.mateusz00.MandelbrotSet.utilities.Procedure;
+import io.github.mateusz00.MandelbrotSet.utilities.Utility;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -18,8 +19,7 @@ public class MandelbrotSetController implements MandelbrotSetControls
     private double zoomStep = DEFAULT_ZOOM_STEP;
     private MandelbrotSetModel model;
     private MandelbrotSetView view;
-    private final ReentrantLock zoomLock = new ReentrantLock();
-    private final ReentrantLock moveLock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     public MandelbrotSetController(MandelbrotSetModel model) {
         this.model = model;
@@ -36,36 +36,28 @@ public class MandelbrotSetController implements MandelbrotSetControls
             this.view = null;
     }
 
-    private void tryMoving(Point changeVector) {
+    private void tryAction(Procedure procedure) {
         // Ensures that threads won't queue (makes app more responsive)
-        if(!moveLock.isLocked()) {
+        if(!lock.isLocked()) {
             new Thread(() -> {
-                if(moveLock.tryLock()) {
+                if(lock.tryLock()) {
                     try {
-                        model.moveCenter(changeVector);
+                        procedure.call();
                     }
                     finally {
-                        moveLock.unlock();
+                        lock.unlock();
                     }
                 }
             }).start();
         }
     }
 
+    private void tryMoving(Point changeVector) {
+        tryAction(() -> model.moveCenter(changeVector));
+    }
+
     private void tryZooming(double zoom) {
-        // Ensures that threads won't queue (makes app more responsive)
-        if(!zoomLock.isLocked()) {
-            new Thread(() -> {
-                if(zoomLock.tryLock()) {
-                    try {
-                        model.zoom(zoom);
-                    }
-                    finally {
-                        zoomLock.unlock();
-                    }
-                }
-            }).start();
-        }
+        tryAction(() -> model.zoom(zoom));
     }
 
     @Override

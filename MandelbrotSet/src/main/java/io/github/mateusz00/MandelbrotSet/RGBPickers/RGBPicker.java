@@ -1,6 +1,6 @@
 package io.github.mateusz00.MandelbrotSet.RGBPickers;
 
-import io.github.mateusz00.MandelbrotSet.MandelbrotSetResult;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetResult;
 
 public interface RGBPicker
 {

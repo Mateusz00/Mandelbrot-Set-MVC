@@ -1,15 +1,23 @@
 package io.github.mateusz00.MandelbrotSet;
 
-import io.github.mateusz00.MandelbrotSet.Dialogs.ExtensionFilter;
-import io.github.mateusz00.MandelbrotSet.Dialogs.ImageGenerateDialog;
-import io.github.mateusz00.MandelbrotSet.Dialogs.SettingsDialog;
-import io.github.mateusz00.MandelbrotSet.Dialogs.VideoGenerateDialog;
-import io.github.mateusz00.MandelbrotSet.RGBPickers.*;
-import io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.PickerBlue;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.PickerRed;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.PickerRedDark;
+import io.github.mateusz00.MandelbrotSet.dialogs.ExtensionFilter;
+import io.github.mateusz00.MandelbrotSet.dialogs.ImageGenerateDialog;
+import io.github.mateusz00.MandelbrotSet.dialogs.SettingsDialog;
+import io.github.mateusz00.MandelbrotSet.dialogs.VideoGenerateDialog;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetController;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetModel;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetView;
+import io.github.mateusz00.MandelbrotSet.utilities.SwingUtility;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 
 public class Application

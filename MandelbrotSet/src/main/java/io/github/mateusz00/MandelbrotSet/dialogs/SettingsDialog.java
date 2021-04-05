@@ -1,13 +1,12 @@
-package io.github.mateusz00.MandelbrotSet.Dialogs;
+package io.github.mateusz00.MandelbrotSet.dialogs;
 
-import io.github.mateusz00.MandelbrotSet.MandelbrotSetController;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetController;
 
 import javax.swing.*;
 import java.awt.*;
-import java.math.RoundingMode;
 import java.text.NumberFormat;
 
-import static io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility.createFieldAndLabel;
+import static io.github.mateusz00.MandelbrotSet.utilities.SwingUtility.createFieldAndLabel;
 
 public class SettingsDialog extends MandelbrotSetDialog
 {

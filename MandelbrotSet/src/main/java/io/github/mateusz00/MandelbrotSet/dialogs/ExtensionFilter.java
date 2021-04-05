@@ -1,6 +1,6 @@
-package io.github.mateusz00.MandelbrotSet.Dialogs;
+package io.github.mateusz00.MandelbrotSet.dialogs;
 
-import io.github.mateusz00.MandelbrotSet.Utilities.Utility;
+import io.github.mateusz00.MandelbrotSet.utilities.Utility;
 
 import javax.swing.filechooser.FileFilter;
 import java.io.File;

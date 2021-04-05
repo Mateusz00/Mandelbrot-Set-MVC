@@ -1,4 +1,4 @@
-package io.github.mateusz00.MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet.mandelbrot;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -15,9 +15,6 @@ public class MandelbrotSetModel extends Observable
 {
     private PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
     private ArrayList<MandelbrotSetResult> results;
-    private final Object rangeLock = new Object();
-    private final Object stepLock = new Object();
-    private final Object iterationsLock = new Object();
     private static final long DEFAULT_MAX_ITERATIONS = 250;
     private static final long DEFAULT_ESCAPE_RADIUS = 40;
     private static final double DEFAULT_X_RANGE = 3.4;
@@ -58,17 +55,14 @@ public class MandelbrotSetModel extends Observable
         generateConcurrently(startX, endX, startY, endY, true);
     }
 
-    private void generateConcurrently(int startX, int endX, int startY, int endY, boolean showResult) {
-        // Ensure that whole set will be generated using the same data
-        synchronized(rangeLock) { synchronized(iterationsLock) { synchronized(results) { synchronized(stepLock) {
-            ForkGenerate fg = new ForkGenerate(startX, endX, startY, endY);
-            pool.invoke(fg);
+    private synchronized void generateConcurrently(int startX, int endX, int startY, int endY, boolean showResult) {
+        ForkGenerate fg = new ForkGenerate(startX, endX, startY, endY);
+        pool.invoke(fg);
 
-            if(showResult) {
-                setChanged();
-                notifyObservers();
-            }
-        } } } }
+        if(showResult) {
+            setChanged();
+            notifyObservers();
+        }
     }
 
     private void generateBlock(int firstPixel, int lastPixel, int firstLine, int lastLine) {
@@ -116,31 +110,27 @@ public class MandelbrotSetModel extends Observable
     /**
      * @return Array containing calculated MandelbrotSetResult for each pixel
      */
-    public List<MandelbrotSetResult> getResults() {
-        synchronized(results) {
-            ArrayList<MandelbrotSetResult> copy = new ArrayList<>(results.size());
+    public synchronized List<MandelbrotSetResult> getResults() {
+        ArrayList<MandelbrotSetResult> copy = new ArrayList<>(results.size());
 
-            for(MandelbrotSetResult result : results)
-                copy.add(new MandelbrotSetResult(result.getIterations(), result.getEscapeValue()));
+        for(MandelbrotSetResult result : results)
+            copy.add(new MandelbrotSetResult(result.getIterations(), result.getEscapeValue()));
 
-            return copy;
-        }
+        return copy;
     }
 
     /**
      * @param changeVector which direction and how far(in pixels) will center be moved.
      */
-    public void moveCenter(Point changeVector) {
-        synchronized(rangeLock) { synchronized(stepLock) {
-            double xChange = xStep * changeVector.getX();
-            double yChange = yStep * changeVector.getY();
+    public synchronized void moveCenter(Point changeVector) {
+        double xChange = xStep * changeVector.getX();
+        double yChange = yStep * changeVector.getY();
 
-            center.setLocation(center.getX() + xChange, center.getY() + yChange);
-            moveMandelbrotSet(changeVector);
-        } }
+        center.setLocation(center.getX() + xChange, center.getY() + yChange);
+        moveMandelbrotSet(changeVector);
     }
 
-    private void moveMandelbrotSet(Point changeVectorPixels) {
+    private synchronized void moveMandelbrotSet(Point changeVectorPixels) {
         int xShift = changeVectorPixels.x;
         int yShift = changeVectorPixels.y;
 
@@ -161,14 +151,12 @@ public class MandelbrotSetModel extends Observable
             int shiftRangeEnd = (xShift > 0) ? size.width : -1;
 
             // Shifts array data by xShift and fills emptied cells
-            synchronized(iterationsLock) { synchronized(results) {
-                for(int y = 0; y < size.height; ++y) {
-                    int lineOffset = y * size.width;
+            for(int y = 0; y < size.height; ++y) {
+                int lineOffset = y * size.width;
 
-                    for(int i = shiftRangeBeg; i != shiftRangeEnd; i += direction)
-                        results.set(i - xShift + lineOffset, results.get(i + lineOffset));
-                }
-            } }
+                for(int i = shiftRangeBeg; i != shiftRangeEnd; i += direction)
+                    results.set(i - xShift + lineOffset, results.get(i + lineOffset));
+            }
 
             // Defines the area where data have to be generated as it holds invalid values
             if(xShift > 0) {
@@ -188,14 +176,12 @@ public class MandelbrotSetModel extends Observable
             int shiftRangeEnd = (yShift > 0) ? size.height : -1;
 
             // Shifts array data by yShift and fills emptied cells
-            synchronized(iterationsLock) { synchronized(results) {
-                for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
-                    int lineOffset = y * size.width;
+            for(int y = shiftRangeBeg; y != shiftRangeEnd; y += direction) {
+                int lineOffset = y * size.width;
 
-                    for(int i = 0; i < size.width; ++i)
-                        results.set(i + lineOffset - yShift * size.width, results.get(i + lineOffset));
-                }
-            } }
+                for(int i = 0; i < size.width; ++i)
+                    results.set(i + lineOffset - yShift * size.width, results.get(i + lineOffset));
+            }
 
             // Defines the area where data have to be generated as it holds invalid values
             if(yShift > 0) {
@@ -238,52 +224,40 @@ public class MandelbrotSetModel extends Observable
         notifyObservers();
     }
 
-    public double getXRange() {
-        synchronized(rangeLock) {
-            return xRange;
-        }
+    public synchronized double getXRange() {
+        return xRange;
     }
 
-    public void setXRange(double range) {
-        synchronized(rangeLock) {
-            xRange = range;
-            calculateStep();
-        }
+    public synchronized void setXRange(double range) {
+        xRange = range;
+        calculateStep();
     }
 
-    public double getYRange() {
-        synchronized(rangeLock) {
-            return yRange;
-        }
+    public synchronized double getYRange() {
+        return yRange;
     }
 
-    public void setYRange(double range) {
-        synchronized(rangeLock) {
-            yRange = range;
-            calculateStep();
-        }
+    public synchronized void setYRange(double range) {
+        yRange = range;
+        calculateStep();
     }
 
-    private void calculateStep() {
-        synchronized(rangeLock) { synchronized(stepLock) {
-            xStep = getXRange() / size.width;
-            yStep = getYRange() / size.height;
-        } }
+    private synchronized void calculateStep() {
+        xStep = getXRange() / size.width;
+        yStep = getYRange() / size.height;
     }
 
-    public void zoom(double zoomChange) {
-        synchronized(rangeLock) { synchronized(stepLock) {
-            xRange /= zoomChange;
-            yRange /= zoomChange;
+    public synchronized void zoom(double zoomChange) {
+        xRange /= zoomChange;
+        yRange /= zoomChange;
 
-            // Calculate new max iterations value
-            double newIterations = DEFAULT_MAX_ITERATIONS * (Math.log(3.4 / getXRange()) + 0.5);
-            long temp = Math.max((long) newIterations, DEFAULT_MAX_ITERATIONS);
-            maxIterations = (long) (temp * maxIterationsMultiplier);
+        // Calculate new max iterations value
+        double newIterations = DEFAULT_MAX_ITERATIONS * (Math.log(3.4 / getXRange()) + 0.5);
+        long temp = Math.max((long) newIterations, DEFAULT_MAX_ITERATIONS);
+        maxIterations = (long) (temp * maxIterationsMultiplier);
 
-            calculateStep();
-            generate();
-        } }
+        calculateStep();
+        generate();
     }
 
     public void setSize(Dimension size) {
@@ -301,50 +275,36 @@ public class MandelbrotSetModel extends Observable
         return size;
     }
 
-    public void setMaxIterations(long maxIterations) {
-        synchronized(iterationsLock) {
-            this.maxIterations = maxIterations;
-        }
+    public synchronized void setMaxIterations(long maxIterations) {
+        this.maxIterations = maxIterations;
     }
 
-    public long getMaxIterations() {
-        synchronized(iterationsLock) {
-            return maxIterations;
-        }
+    public synchronized long getMaxIterations() {
+        return maxIterations;
     }
 
-    public Point2D.Double getCenter() {
-        synchronized(rangeLock) {
-            return center;
-        }
+    public synchronized Point2D.Double getCenter() {
+        return center;
     }
 
-    public void setCenter(Point2D.Double center) {
-        synchronized(rangeLock) {
-            this.center = center;
-        }
+    public synchronized void setCenter(Point2D.Double center) {
+        this.center = center;
     }
 
     public long getEscapeRadius() {
         return escapeRadius;
     }
 
-    public void setEscapeRadius(long escapeRadius) {
-        synchronized(iterationsLock) {
-            this.escapeRadius = escapeRadius;
-        }
+    public synchronized void setEscapeRadius(long escapeRadius) {
+        this.escapeRadius = escapeRadius;
     }
 
-    public double getMaxIterationsMultiplier() {
-        synchronized(iterationsLock) {
-            return maxIterationsMultiplier;
-        }
+    public synchronized double getMaxIterationsMultiplier() {
+        return maxIterationsMultiplier;
     }
 
-    public void setMaxIterationsMultiplier(double maxIterationsMultiplier) {
-        synchronized(iterationsLock) {
-            this.maxIterationsMultiplier = maxIterationsMultiplier;
-        }
+    public synchronized void setMaxIterationsMultiplier(double maxIterationsMultiplier) {
+        this.maxIterationsMultiplier = maxIterationsMultiplier;
     }
 
     public void restoreDefaultSettings() {
@@ -366,30 +326,30 @@ public class MandelbrotSetModel extends Observable
 
     private class ForkGenerate extends RecursiveAction
     {
-        private int mStartX;
-        private int mEndX;
-        private int mStartY;
-        private int mEndY;
+        private int startX;
+        private int endX;
+        private int startY;
+        private int endY;
 
         public ForkGenerate(int startX, int endX, int startY, int endY) {
-            mStartX = startX;
-            mEndX = endX;
-            mStartY = startY;
-            mEndY = endY;
+            this.startX = startX;
+            this.endX = endX;
+            this.startY = startY;
+            this.endY = endY;
         }
 
         @Override
         protected void compute() {
-            int length = mEndY - mStartY;
+            int length = endY - startY;
 
             if(length < THRESHOLD_Y) {
-                generateBlock(mStartX, mEndX, mStartY, mEndY);
+                generateBlock(startX, endX, startY, endY);
             }
             else {
                 int mid = length / 2;
 
-                invokeAll(new ForkGenerate(mStartX, mEndX, mStartY, mStartY + mid),
-                          new ForkGenerate(mStartX, mEndX, mStartY + mid, mEndY));
+                invokeAll(new ForkGenerate(startX, endX, startY, startY + mid),
+                          new ForkGenerate(startX, endX, startY + mid, endY));
             }
         }
     }

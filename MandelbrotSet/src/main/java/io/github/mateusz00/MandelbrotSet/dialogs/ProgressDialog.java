@@ -1,6 +1,6 @@
-package io.github.mateusz00.MandelbrotSet.Dialogs;
+package io.github.mateusz00.MandelbrotSet.dialogs;
 
-import io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility;
+import io.github.mateusz00.MandelbrotSet.utilities.SwingUtility;
 
 import javax.swing.*;
 import java.awt.*;

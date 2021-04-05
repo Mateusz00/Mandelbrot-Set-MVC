@@ -1,10 +1,8 @@
-package io.github.mateusz00.MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet.ui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
+import java.awt.event.*;
 import java.util.function.Consumer;
 
 public class RectangleSelector
@@ -18,6 +16,14 @@ public class RectangleSelector
 
     public RectangleSelector(JPanel drawingSurface) {
         this.drawingSurface = drawingSurface;
+        drawingSurface.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "deleteSelection");
+        drawingSurface.getActionMap().put("deleteSelection", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                isActive = false;
+                getDrawingSurface().repaint();
+            }
+        });
 
         drawingSurface.addMouseListener(new MouseAdapter() {
             @Override
@@ -32,8 +38,10 @@ public class RectangleSelector
             @Override
             public void mouseReleased(MouseEvent e) {
                 if(e.getButton() == MouseEvent.BUTTON3 && isActive) {
-                    if(onRelease != null && rectangle.getSize().width > 0 && rectangle.getSize().height > 0)
+                    if(onRelease != null && rectangle.getSize().width > 0 && rectangle.getSize().height > 0 &&
+                            drawingSurface.contains(e.getPoint())) {
                         onRelease.accept(e);
+                    }
 
                     isActive = false;
                     getDrawingSurface().repaint();

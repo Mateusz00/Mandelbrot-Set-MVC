@@ -1,7 +1,7 @@
-package io.github.mateusz00.MandelbrotSet.Dialogs;
+package io.github.mateusz00.MandelbrotSet.dialogs;
 
-import io.github.mateusz00.MandelbrotSet.MandelbrotSetController;
 import io.github.mateusz00.MandelbrotSet.RGBPickers.*;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetController;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -12,8 +12,8 @@ import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
 
-import static io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility.createFieldAndLabel;
-import static io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility.getFlowLayoutDefaultPadding;
+import static io.github.mateusz00.MandelbrotSet.utilities.SwingUtility.createFieldAndLabel;
+import static io.github.mateusz00.MandelbrotSet.utilities.SwingUtility.getFlowLayoutDefaultPadding;
 
 public class MandelbrotSetDialog extends JDialog
 {

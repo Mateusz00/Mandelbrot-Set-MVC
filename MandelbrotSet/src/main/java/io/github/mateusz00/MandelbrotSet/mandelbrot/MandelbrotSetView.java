@@ -1,7 +1,8 @@
-package io.github.mateusz00.MandelbrotSet;
+package io.github.mateusz00.MandelbrotSet.mandelbrot;
 
-import io.github.mateusz00.MandelbrotSet.RGBPickers.RGBPicker;
 import io.github.mateusz00.MandelbrotSet.RGBPickers.PickerRed;
+import io.github.mateusz00.MandelbrotSet.RGBPickers.RGBPicker;
+import io.github.mateusz00.MandelbrotSet.ui.RectangleSelector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,8 +11,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.util.*;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
 public class MandelbrotSetView extends JPanel
 {

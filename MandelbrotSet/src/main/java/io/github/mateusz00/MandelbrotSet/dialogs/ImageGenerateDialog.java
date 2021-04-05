@@ -1,11 +1,10 @@
-package io.github.mateusz00.MandelbrotSet.Dialogs;
+package io.github.mateusz00.MandelbrotSet.dialogs;
 
-import io.github.mateusz00.MandelbrotSet.MandelbrotSetController;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetController;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;

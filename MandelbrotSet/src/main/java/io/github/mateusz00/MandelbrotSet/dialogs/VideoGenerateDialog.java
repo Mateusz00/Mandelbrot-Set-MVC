@@ -1,7 +1,7 @@
-package io.github.mateusz00.MandelbrotSet.Dialogs;
+package io.github.mateusz00.MandelbrotSet.dialogs;
 
-import io.github.mateusz00.MandelbrotSet.MandelbrotSetController;
-import io.github.mateusz00.MandelbrotSet.Utilities.Utility;
+import io.github.mateusz00.MandelbrotSet.mandelbrot.MandelbrotSetController;
+import io.github.mateusz00.MandelbrotSet.utilities.Utility;
 import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.FFmpegExecutor;
 import net.bramp.ffmpeg.FFprobe;
@@ -19,7 +19,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
-import static io.github.mateusz00.MandelbrotSet.Utilities.SwingUtility.createFieldAndLabel;
+import static io.github.mateusz00.MandelbrotSet.utilities.SwingUtility.createFieldAndLabel;
 
 public class VideoGenerateDialog extends GenerateDialog
 {
